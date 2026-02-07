@@ -8,17 +8,30 @@
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
     <script src="config.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@700&display=swap" rel="stylesheet">
     
     <style>
         body { margin: 0; padding: 0; font-family: 'Press Start 2P', cursive; overflow: hidden; background: #000; }
         
-        /* Cursor */
+        /* Cursor (Hidden to allow Steve Marker to be the focus, or keep crosshair?) 
+           Let's keep crosshair for aiming, Steve for marking. */
         #map { cursor: none; width: 100%; height: 100%; position: absolute; }
         #cursor-layer { position: fixed; pointer-events: none; z-index: 9999; mix-blend-mode: difference; }
         .crosshair { width: 24px; height: 24px; position: relative; transform: translate(-50%, -50%); }
         .crosshair::before, .crosshair::after { content: ''; position: absolute; background: white; box-shadow: 0 0 2px black; }
         .crosshair::before { top: 11px; left: 0; width: 24px; height: 2px; }
         .crosshair::after { top: 0; left: 11px; width: 2px; height: 24px; }
+
+        /* --- STEVE MARKER --- */
+        .steve-marker {
+            width: 40px;
+            height: 40px;
+            background-image: "images/steve.png";
+            background-size: cover;
+            border: 2px solid white;
+            box-shadow: 4px 4px 0 #000;
+            image-rendering: pixelated;
+        }
 
         /* Sidebar */
         #sidebar {
@@ -35,21 +48,22 @@
         /* Header */
         .header-container { display: flex; align-items: center; margin-bottom: 20px; border-bottom: 2px dashed #444; padding-bottom: 15px; }
         .country-flag { width: 80px; height: 50px; border: 3px solid #fff; margin-right: 20px; box-shadow: 4px 4px 0 #000; }
-        .country-name { font-size: 16px; color: #ffff55; line-height: 1.5; text-transform: uppercase; }
+        .country-info { display: flex; flex-direction: column; }
+        .country-name { font-size: 16px; color: #ffff55; line-height: 1.5; text-transform: uppercase; margin-bottom: 5px; }
+        .region-name { font-size: 10px; color: #aaa; text-transform: uppercase; }
 
         /* Biome Image */
-        .sidebar-image-container { width: 100%; height: 250px; border: 4px solid #555; margin-bottom: 15px; background: #000; position: relative; }
+        .sidebar-image-container { width: 100%; height: 220px; border: 4px solid #555; margin-bottom: 15px; background: #000; position: relative; }
         .sidebar-img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
 
-        /* Biome Title */
-        h1 { font-size: 20px; color: #fff; margin: 0; text-transform: uppercase; text-shadow: 3px 3px 0 #000; margin-bottom: 8px; line-height: 1.4; }
-        h2 { font-size: 14px; color: #ffff55; margin: 0 0 20px 0; border-bottom: 2px dashed #444; padding-bottom: 15px; }
+        h1 { font-size: 20px; color: #fff; margin: 0; text-transform: uppercase; text-shadow: 3px 3px 0 #000; margin-bottom: 10px; line-height: 1.4; }
+        h2 { font-family: 'Noto Sans SC', sans-serif; font-size: 18px; color: #f1c40f; margin: 0 0 20px 0; border-bottom: 2px dashed #444; padding-bottom: 15px; letter-spacing: 1px; }
         
-        /* Stats Grid - BIGGER NOW */
+        /* Stats Grid */
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
         .stat-box { background: rgba(255,255,255,0.08); padding: 15px; border: 3px solid #333; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         .label { color: #aaa; font-size: 10px; margin-bottom: 8px; display: block; letter-spacing: 1px; }
-        .value { color: #fff; font-size: 14px; font-weight: bold; text-shadow: 2px 2px 0 #000; }
+        .value { color: #fff; font-size: 12px; font-weight: bold; text-shadow: 2px 2px 0 #000; }
 
         .farming-box { margin-top: auto; border: 2px solid #2ecc71; background: rgba(46, 204, 113, 0.1); padding: 20px; font-size: 12px; color: #2ecc71; line-height: 1.6; }
     </style>
@@ -64,7 +78,10 @@
     
     <div class="header-container">
         <img id="sb-flag" class="country-flag" src="" style="display:none;">
-        <div id="sb-country" class="country-name">Scanning...</div>
+        <div class="country-info">
+            <div id="sb-country" class="country-name">Scanning...</div>
+            <div id="sb-region" class="region-name">...</div>
+        </div>
     </div>
 
     <div class="sidebar-image-container"><img id="sb-image" src="" class="sidebar-img"></div>
@@ -73,25 +90,13 @@
     <h2 id="sb-chinese">...</h2>
     
     <div class="stat-grid">
-        <div class="stat-box">
-            <span class="label">TEMP</span>
-            <span class="value" id="sb-temp">--</span>
-        </div>
-        <div class="stat-box">
-            <span class="label">SKY</span>
-            <span class="value" id="sb-sky">--</span>
-        </div>
-        <div class="stat-box">
-            <span class="label">ELEVATION</span>
-            <span class="value" id="sb-elev">--</span>
-        </div>
-        <div class="stat-box">
-            <span class="label">HUMIDITY</span>
-            <span class="value" id="sb-hum">--</span>
-        </div>
+        <div class="stat-box"><span class="label">TEMP</span><span class="value" id="sb-temp">--</span></div>
+        <div class="stat-box"><span class="label">ELEVATION</span><span class="value" id="sb-elev">--</span></div>
+        <div class="stat-box"><span class="label">PRECIPITATION</span><span class="value" id="sb-precip">--</span></div>
+        <div class="stat-box"><span class="label">HUMIDITY</span><span class="value" id="sb-hum">--</span></div>
     </div>
 
-    <div class="farming-box" id="sb-farm">Click a country to scan.</div>
+    <div class="farming-box" id="sb-farm">Click a location to scan.</div>
 </div>
 
 <script>
@@ -100,7 +105,6 @@
 
     mapboxgl.accessToken = MAPBOX_KEY;
 
-    // 1. SETUP MAP
     const map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/satellite-streets-v12', 
@@ -109,137 +113,163 @@
         projection: 'globe' 
     });
 
+    // Steve Marker Variable
+    let steveMarker = null;
+
     map.on('style.load', () => {
-        map.addSource('mapbox-dem', {
-            'type': 'raster-dem',
-            'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
-            'tileSize': 512,
-            'maxzoom': 14
-        });
+        map.addSource('mapbox-dem', { 'type': 'raster-dem', 'url': 'mapbox://mapbox.mapbox-terrain-dem-v1', 'tileSize': 512, 'maxzoom': 14 });
         map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
         map.setFog({ 'color': 'rgb(10, 10, 20)', 'high-color': 'rgb(30, 30, 50)', 'horizon-blend': 0.1, 'star-intensity': 0.6 });
     });
 
-    // --- 2. OFFICIAL MINECRAFT BIOME LIST ---
-    // Added 'force: true' to prevent Elevation logic from overwriting (Fixes Greenland)
-    const COUNTRY_BIOMES = {
-        // --- DESERTS ---
-        'SA': { biome: 'Desert', chinese: '沙漠', image: 'images/desert.png', farm: '🌵 Cactus & Oil.' }, 
-        'EG': { biome: 'Desert', chinese: '沙漠', image: 'images/desert.png', farm: '🌵 Sugar Cane.' },
-        'AE': { biome: 'Desert', chinese: '沙漠', image: 'images/desert.png', farm: '🌵 Cactus.' },
-        'IQ': { biome: 'Desert', chinese: '沙漠', image: 'images/desert.png', farm: '🌵 Cactus.' },
-        'DZ': { biome: 'Desert', chinese: '沙漠', image: 'images/desert.png', farm: '🌵 Cactus.' },
-        'LY': { biome: 'Desert', chinese: '沙漠', image: 'images/desert.png', farm: '🌵 Cactus.' },
-        'OM': { biome: 'Badlands', chinese: '恶地', image: 'images/desert.png', farm: '⛏️ Gold Mines.' },
-        'AU': { biome: 'Red Sand Badlands', chinese: '红沙恶地', image: 'images/desert.png', farm: '🕷️ Spiders & Gold.' },
-        'MX': { biome: 'Wooded Badlands', chinese: '繁茂恶地', image: 'images/desert.png', farm: '🌵 Cactus & Gold.' },
-        'NA': { biome: 'Red Sand Desert', chinese: '红沙沙漠', image: 'images/desert.png', farm: '🌵 Dead Bushes.' },
-
-        // --- JUNGLES ---
-        'BR': { biome: 'Sparse Jungle', chinese: '稀疏丛林', image: 'images/forest.png', farm: '🎋 Bamboo & Cocoa.' },
-        'ID': { biome: 'Bamboo Jungle', chinese: '竹林', image: 'images/forest.png', farm: '🎋 Bamboo & Pandas.' },
-        'VN': { biome: 'Jungle', chinese: '丛林', image: 'images/forest.png', farm: '🎋 Bamboo.' },
-        'TH': { biome: 'Jungle', chinese: '丛林', image: 'images/forest.png', farm: '🎋 Bamboo.' },
-        'CO': { biome: 'Lush Caves', chinese: '繁茂洞穴', image: 'images/forest.png', farm: '🍀 Glow Berries.' }, 
-        'IN': { biome: 'Jungle Edge', chinese: '丛林边缘', image: 'images/forest.png', farm: '🐅 Tigers & Bamboo.' },
-
-        // --- SPECIAL / RARE ---
-        'JP': { biome: 'Cherry Grove', chinese: '樱花树林', image: 'images/forest.png', farm: '🌸 Pink Petals.' },
-        'IS': { biome: 'Basalt Deltas', chinese: '玄武岩三角洲', image: 'images/taiga.png', farm: '🌋 Magma Cubes.' },
-        'MG': { biome: 'Mushroom Fields', chinese: '蘑菇岛', image: 'images/swamp.png', farm: '🍄 Mooshrooms.' },
-        'NP': { biome: 'Jagged Peaks', chinese: '尖峭山峰', image: 'images/snowytundra.png', farm: '🐐 Goats & Ice.' }, 
-        'CH': { biome: 'Stony Peaks', chinese: '石峰', image: 'images/snowytundra.png', farm: '🐐 Goats & Emeralds.' },
-
-        // --- SNOW / ICE ---
-        'RU': { biome: 'Snowy Taiga', chinese: '积雪针叶林', image: 'images/taiga.png', farm: '🌲 Spruce & Foxes.' },
-        'CA': { biome: 'Old Growth Pine Taiga', chinese: '原生松木针叶林', image: 'images/taiga.png', farm: '🌲 Spruce & Wolves.' },
-        'NO': { biome: 'Snowy Slopes', chinese: '积雪山坡', image: 'images/snowytundra.png', farm: '❄️ Powder Snow.' },
-        'FI': { biome: 'Taiga', chinese: '针叶林', image: 'images/taiga.png', farm: ' berries.' },
-        'GL': { biome: 'Ice Spikes', chinese: '冰刺平原', image: 'images/snowytundra.png', farm: '❌ Polar Bears.', force: true }, // FORCE OVERRIDE
-        'AQ': { biome: 'Ice Spikes', chinese: '冰刺平原', image: 'images/snowytundra.png', farm: '❌ Penguins.', force: true },
-
-        // --- PLAINS / FORESTS ---
-        'US': { biome: 'Plains', chinese: '平原', image: 'images/plains.png', farm: '🌾 Wheat & Cows.' },
-        'CN': { biome: 'Bamboo Jungle', chinese: '竹林', image: 'images/forest.png', farm: '🎋 Pandas.' },
-        'GB': { biome: 'Birch Forest', chinese: '白桦森林', image: 'images/forest.png', farm: '🍎 Sheep & Rain.' },
-        'IE': { biome: 'Lush Caves', chinese: '繁茂洞穴', image: 'images/plains.png', farm: '🍀 Glow Berries.' },
-        'ZA': { biome: 'Savanna Plateau', chinese: '热带高原', image: 'images/savanna.png', farm: '🌳 Acacia.' },
-        'KE': { biome: 'Windswept Savanna', chinese: '狂风热带草原', image: 'images/savanna.png', farm: '🦁 Lions & Acacia.' },
-        'DE': { biome: 'Dark Forest', chinese: '黑森林', image: 'images/forest.png', farm: '🍄 Mushrooms.' },
+    // --- BIOME DICTIONARIES ---
+    const REGION_BIOMES = {
+        'California': { biome: 'Badlands', chinese: '恶地 Èdì', image: 'images/desert.png', farm: '⛏️ Gold Mines.' },
+        'Nevada': { biome: 'Desert', chinese: '沙漠 Shāmò', image: 'images/desert.png', farm: '🌵 Cactus.' },
+        'Arizona': { biome: 'Desert', chinese: '沙漠 Shāmò', image: 'images/desert.png', farm: '🌵 Cactus.' },
+        'Florida': { biome: 'Mangrove Swamp', chinese: '红树林 Hóngshùlín', image: 'images/swamp.png', farm: '🐸 Frogs.' },
+        'Louisiana': { biome: 'Swamp', chinese: '沼泽 Zhǎozé', image: 'images/swamp.png', farm: '🍄 Slimes.' },
+        'Alaska': { biome: 'Snowy Taiga', chinese: '积雪针叶林 Jīxuě Zhēnyèlín', image: 'images/taiga.png', farm: '🌲 Foxes.' },
+        'Hawaii': { biome: 'Tropical Jungle', chinese: '热带丛林 Rèdài Cónglín', image: 'images/forest.png', farm: '🥥 Coconuts.' },
+        'Yukon': { biome: 'Snowy Tundra', chinese: '冻原 Dòngyuán', image: 'images/snowytundra.png', farm: '❄️ Polar Bears.' },
+        'Siberia': { biome: 'Snowy Taiga', chinese: '积雪针叶林 Jīxuě Zhēnyèlín', image: 'images/taiga.png', farm: '🌲 Spruce.' }
     };
 
-    function getBiomeByLat(lat, isWater) {
-        if (isWater) return { biome: 'Deep Ocean', chinese: '深海', image: 'images/swamp.png', farm: '🦑 Squid & Guardians.' };
-        
-        const abs = Math.abs(lat);
-        if (abs > 60) return { biome: 'Snowy Plains', chinese: '积雪平原', image: 'images/snowytundra.png', farm: '❄️ Ice.' };
-        if (abs > 50) return { biome: 'Taiga', chinese: '针叶林', image: 'images/taiga.png', farm: '🌲 Spruce.' };
-        if (abs > 35) return { biome: 'Plains', chinese: '平原', image: 'images/plains.png', farm: '🌾 Wheat.' };
-        if (abs > 23) return { biome: 'Desert', chinese: '沙漠', image: 'images/desert.png', farm: '🌵 Cactus.' };
-        if (abs > 10) return { biome: 'Savanna', chinese: '热带草原', image: 'images/savanna.png', farm: '🌳 Acacia.' };
-        return { biome: 'Jungle', chinese: '丛林', image: 'images/forest.png', farm: '🎋 Bamboo.' };
+    const COUNTRY_BIOMES = {
+        'SA': { biome: 'Desert', chinese: '沙漠 Shāmò', image: 'images/desert.png', farm: '🌵 Cactus & Oil.' }, 
+        'EG': { biome: 'Desert', chinese: '沙漠 Shāmò', image: 'images/desert.png', farm: '🌵 Sugar Cane.' },
+        'AE': { biome: 'Desert', chinese: '沙漠 Shāmò', image: 'images/desert.png', farm: '🌵 Cactus.' },
+        'OM': { biome: 'Badlands', chinese: '恶地 Èdì', image: 'images/desert.png', farm: '⛏️ Gold.' },
+        'BR': { biome: 'Sparse Jungle', chinese: '稀疏丛林 Xīshū Cónglín', image: 'images/forest.png', farm: '🎋 Bamboo.' },
+        'ID': { biome: 'Bamboo Jungle', chinese: '竹林 Zhúlín', image: 'images/forest.png', farm: '🎋 Pandas.' },
+        'VN': { biome: 'Jungle', chinese: '丛林 Cónglín', image: 'images/forest.png', farm: '🎋 Bamboo.' },
+        'JP': { biome: 'Cherry Grove', chinese: '樱花树林 Yīnghuā Shùlín', image: 'images/forest.png', farm: '🌸 Pink Petals.' },
+        'IS': { biome: 'Basalt Deltas', chinese: '玄武岩三角洲 Xuánwǔyán', image: 'images/taiga.png', farm: '🌋 Magma.' },
+        'MG': { biome: 'Mushroom Fields', chinese: '蘑菇岛 Mógū Dǎo', image: 'images/swamp.png', farm: '🍄 Mooshrooms.' },
+        'NP': { biome: 'Jagged Peaks', chinese: '尖峭山峰 Jiānqiào Shānfēng', image: 'images/snowytundra.png', farm: '🐐 Goats.' }, 
+        'GL': { biome: 'Ice Spikes', chinese: '冰刺平原 Bīng Cì', image: 'images/snowytundra.png', farm: '❌ Polar Bears.', force: true },
+        'RU': { biome: 'Snowy Taiga', chinese: '积雪针叶林 Jīxuě Zhēnyèlín', image: 'images/taiga.png', farm: '🌲 Foxes.' },
+        'CA': { biome: 'Taiga', chinese: '针叶林 Zhēnyèlín', image: 'images/taiga.png', farm: '🌲 Spruce.' },
+    };
+
+    // --- OCEAN LOGIC (Correct Minecraft Variants) ---
+    function getOceanBiome(temp, isDeep) {
+        let name = "Ocean";
+        let chinese = "海洋 Hǎiyáng";
+        let img = "images/swamp.png"; // Placeholder for water
+        let farm = "🐟 Cod & Squid.";
+
+        if (temp < -2) {
+             name = isDeep ? "Deep Frozen Ocean" : "Frozen Ocean";
+             chinese = isDeep ? "深冻洋 Shēn Dòngyáng" : "冻洋 Dòngyáng";
+             img = "images/snowytundra.png"; 
+             farm = "❄️ Blue Ice & Polar Bears.";
+        } 
+        else if (temp < 10) {
+             name = isDeep ? "Deep Cold Ocean" : "Cold Ocean";
+             chinese = isDeep ? "深冷水海洋 Shēn Lěngshuǐ" : "冷水海洋 Lěngshuǐ";
+             farm = "🐟 Salmon & Cod.";
+        }
+        else if (temp < 25) {
+             name = isDeep ? "Deep Ocean" : "Ocean"; // Normal Ocean
+             chinese = isDeep ? "深海 Shēnhǎi" : "海洋 Hǎiyáng";
+             farm = "🦑 Glow Squid & Kelp.";
+        }
+        else if (temp < 30) {
+             name = isDeep ? "Deep Lukewarm Ocean" : "Lukewarm Ocean";
+             chinese = isDeep ? "深温水海洋 Shēn Wēnshuǐ" : "温水海洋 Wēnshuǐ";
+             img = "images/plains.png"; 
+             farm = "🐡 Pufferfish & Tropical Fish.";
+        }
+        else {
+             name = "Warm Ocean"; // Warm ocean is rarely "Deep" in Minecraft logic
+             chinese = "暖水海洋 Nuǎnshuǐ";
+             img = "images/plains.png"; 
+             farm = "🐚 Coral Reefs & Pickles.";
+        }
+        return { biome: name, chinese: chinese, image: img, farm: farm };
     }
 
-    // --- 3. CLICK HANDLER ---
+    // --- LAND LOGIC ---
+    function getBiomeByLat(lat, isWater) {
+        if (isWater) return { biome: 'River', chinese: '河流 Héliú', image: 'images/swamp.png', farm: '🎣 Fishing.' };
+        
+        const abs = Math.abs(lat);
+        if (abs > 60) return { biome: 'Snowy Plains', chinese: '积雪平原 Jīxuě Píngyuán', image: 'images/snowytundra.png', farm: '❄️ Ice.' };
+        if (abs > 50) return { biome: 'Old Growth Taiga', chinese: '原生针叶林 Yuánshēng', image: 'images/taiga.png', farm: '🌲 Spruce.' };
+        if (abs > 35) return { biome: 'Birch Forest', chinese: '白桦森林 Báihuà', image: 'images/forest.png', farm: '🌳 Birch Wood.' };
+        if (abs > 23) return { biome: 'Desert', chinese: '沙漠 Shāmò', image: 'images/desert.png', farm: '🌵 Cactus.' };
+        if (abs > 15) return { biome: 'Savanna Plateau', chinese: '热带高原 Rèdài Gāoyuán', image: 'images/savanna.png', farm: '🦁 Acacia.' };
+        if (abs > 0) return { biome: 'Jungle', chinese: '丛林 Cónglín', image: 'images/forest.png', farm: '🎋 Bamboo.' };
+        return { biome: 'Plains', chinese: '平原 Píngyuán', image: 'images/plains.png', farm: '🌾 Wheat.' };
+    }
+
+    // --- CLICK HANDLER ---
     map.on('click', async (e) => {
         const { lng, lat } = e.lngLat;
         const sidebar = document.getElementById('sidebar');
 
-        // Check for Water
-        const bbox = [[e.point.x - 10, e.point.y - 10], [e.point.x + 10, e.point.y + 10]];
-        const features = map.queryRenderedFeatures(bbox);
-        const isWater = features.some(f => f.layer.id.includes('water') || f.layer.id.includes('ocean'));
+        // 1. PLACE STEVE MARKER
+        if (steveMarker) steveMarker.remove();
+        const el = document.createElement('div');
+        el.className = 'steve-marker';
+        steveMarker = new mapboxgl.Marker(el).setLngLat(e.lngLat).addTo(map);
 
-        // Check Elevation
+        // 2. DETECT WATER MAPBOX (Visual check)
+        const bbox = [[e.point.x - 10, e.point.y - 10], [e.point.x + 10, e.point.y + 10]];
+        const isWaterMapbox = map.queryRenderedFeatures(bbox).some(f => f.layer.id.includes('water') || f.layer.id.includes('ocean'));
         const elevation = map.queryTerrainElevation(e.lngLat) || 0;
 
         try {
-            // A. FETCH COUNTRY DATA
+            // A. GEOCODE
             const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
             const geoData = await geoRes.json();
             
-            // B. FETCH WEATHER DATA
+            // B. WEATHER
             const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&units=metric&appid=${WEATHER_KEY}`);
             const weatherData = await weatherRes.json();
-
             const temp = Math.round(weatherData.main.temp);
             const humidity = weatherData.main.humidity;
-            const sky = weatherData.weather[0].description; 
+            const weatherMain = weatherData.weather[0].main; 
 
             // C. DETERMINE BIOME
             let result;
-            const countryCode = geoData.countryCode;
-            const countryDef = COUNTRY_BIOMES[countryCode];
+            const countryCode = geoData.countryCode; 
+            const regionName = geoData.principalSubdivision; 
+            // Is it legally international waters?
+            const isDeepOcean = !geoData.countryName; 
 
-            // Priority Logic:
-            // 1. If country has "force: true" (e.g. Greenland), USE IT.
-            if (countryDef && countryDef.force) {
-                 result = countryDef;
+            // --- MASTER LOGIC ---
+
+            // 1. OCEAN OVERRIDE (If Mapbox sees water AND (No Country OR API says water))
+            if (isWaterMapbox && (isDeepOcean || geoData.locality === "")) {
+                result = getOceanBiome(temp, isDeepOcean);
             }
-            // 2. High Elevation -> Jagged Peaks (unless forced)
+            // 2. High Elevation
             else if (elevation > 2000) {
-                 result = { biome: 'Jagged Peaks', chinese: '尖峭山峰', image: 'images/snowytundra.png', farm: '🐐 Goats & Emeralds.' };
+                 let snowLine = Math.abs(lat) < 30 ? 4000 : 1500;
+                 if (elevation > snowLine) {
+                    result = { biome: 'Jagged Peaks', chinese: '尖峭山峰 Jiānqiào', image: 'images/snowytundra.png', farm: '🐐 Goats.' };
+                 } else {
+                    result = { biome: 'Stony Peaks', chinese: '石峰 Shífēng', image: 'images/savanna.png', farm: '⛏️ Iron.' };
+                 }
             }
-            else if (elevation > 1200) {
-                 result = { biome: 'Stony Peaks', chinese: '石峰', image: 'images/savanna.png', farm: '⛏️ Iron & Coal.' };
+            // 3. Known Region/Country
+            else if (REGION_BIOMES[regionName]) {
+                 result = REGION_BIOMES[regionName];
             }
-            // 3. Water
-            else if (isWater) {
-                 result = getBiomeByLat(lat, true);
+            else if (COUNTRY_BIOMES[countryCode]) {
+                 result = COUNTRY_BIOMES[countryCode];
             }
-            // 4. Specific Country Definition
-            else if (countryDef) {
-                 result = countryDef;
-            }
-            // 5. Fallback
+            // 4. Fallback
             else {
-                 result = getBiomeByLat(lat, false);
+                 result = getBiomeByLat(lat, false); // Pass 'false' because we handled real oceans in step 1
             }
 
             // D. UPDATE UI
-            document.getElementById('sb-country').innerText = geoData.countryName || "Unknown Territory";
+            document.getElementById('sb-country').innerText = geoData.countryName || "Deep Ocean";
+            document.getElementById('sb-region').innerText = regionName || "";
             
-            // Flag
             const flagImg = document.getElementById('sb-flag');
             if (countryCode) {
                 flagImg.src = `https://flagcdn.com/w80/${countryCode.toLowerCase()}.png`;
@@ -253,11 +283,16 @@
             document.getElementById('sb-image').src = result.image;
             document.getElementById('sb-farm').innerText = result.farm;
 
-            // Live Stats (Bigger now)
+            // Stats
             document.getElementById('sb-temp').innerText = temp + "°C";
-            document.getElementById('sb-sky').innerText = sky.toUpperCase();
             document.getElementById('sb-elev').innerText = Math.round(elevation) + "m";
             document.getElementById('sb-hum').innerText = humidity + "%";
+            
+            let precipText = "NONE";
+            if (weatherMain === "Rain" || weatherMain === "Drizzle") precipText = "RAIN 🌧️";
+            if (weatherMain === "Snow") precipText = "SNOW ❄️";
+            if (weatherMain === "Thunderstorm") precipText = "STORM ⛈️";
+            document.getElementById('sb-precip').innerText = precipText;
 
             sidebar.classList.add('active');
 
@@ -267,7 +302,6 @@
     });
 
     function closeSidebar() { document.getElementById('sidebar').classList.remove('active'); }
-
     document.addEventListener('mousemove', (e) => {
         const cursor = document.getElementById('cursor-layer');
         cursor.style.left = e.clientX + 'px';
