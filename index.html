@@ -4,174 +4,156 @@
     <meta charset="utf-8">
     <title>Minecraft Biome Scanner</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet">
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
+    
     <script src="config.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     
     <style>
-        body { margin: 0; padding: 0; font-family: 'Press Start 2P', cursive; }
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        body { margin: 0; padding: 0; font-family: 'Press Start 2P', cursive; overflow: hidden; background: #000; }
         
-        /* Custom Minecraft Cursor */
-        #map { cursor: crosshair; } 
+        /* Cursor & UI */
+        #map { cursor: none; width: 100%; height: 100%; position: absolute; }
+        #cursor-layer { position: fixed; pointer-events: none; z-index: 9999; mix-blend-mode: difference; }
+        .crosshair { width: 20px; height: 20px; position: relative; transform: translate(-50%, -50%); }
+        .crosshair::before, .crosshair::after { content: ''; position: absolute; background: white; box-shadow: 0 0 2px black; }
+        .crosshair::before { top: 9px; left: 0; width: 20px; height: 2px; }
+        .crosshair::after { top: 0; left: 9px; width: 2px; height: 20px; }
 
-        /* Popup Styling */
-        .mapboxgl-popup-content {
-            background: #2a2a2a; /* Dark Grey */
-            color: #ffffff;
-            border: 4px solid #ffffff;
-            border-radius: 0;
-            padding: 15px;
-            box-shadow: 8px 8px 0px rgba(0,0,0,0.5);
-            max-width: 300px;
-            font-family: 'Press Start 2P', cursive;
-            font-size: 10px;
-            line-height: 1.5;
+        /* Sidebar */
+        #sidebar {
+            position: absolute; top: 0; right: -400px; width: 350px; height: 100%;
+            background: rgba(16, 0, 16, 0.95); border-left: 6px solid #28022e;
+            box-shadow: -10px 0 20px rgba(0,0,0,0.8); transition: right 0.3s ease-in-out;
+            z-index: 100; padding: 20px; box-sizing: border-box; color: white;
+            display: flex; flex-direction: column;
         }
-        
-        .mapboxgl-popup-close-button {
-            color: white;
-            font-size: 16px;
-            right: 5px;
-            top: 5px;
-        }
-
-        /* Dynamic Colors for Biome Name */
-        .biome-title { font-size: 14px; margin-bottom: 8px; text-transform: uppercase; text-shadow: 2px 2px #000; }
-        .chinese-text { color: #f1c40f; margin-bottom: 8px; font-size: 12px; }
-        .stat-row { margin-top: 5px; color: #aaaaaa; }
-        .farm-tip { margin-top: 10px; border-top: 2px dashed #555; padding-top: 5px; color: #4cd137; }
-        .music-tip { margin-top: 5px; color: #ff9f43; font-style: italic; }
-
+        #sidebar.active { right: 0; }
+        .close-btn { position: absolute; top: 15px; right: 15px; cursor: pointer; font-size: 20px; color: #ff5555; }
+        .sidebar-image-container { width: 100%; height: 200px; border: 4px solid #555; margin: 20px 0; background: #000; }
+        .sidebar-img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+        h1 { font-size: 16px; line-height: 1.5; color: #fff; margin: 0; text-transform: uppercase; text-shadow: 3px 3px 0 #000; }
+        h2 { font-size: 10px; color: #ffff55; margin: 5px 0 20px 0; border-bottom: 2px dashed #444; padding-bottom: 10px; }
+        .stat-box { background: rgba(255,255,255,0.05); padding: 15px; margin-bottom: 15px; border: 2px solid #333; }
+        .label { color: #aaa; font-size: 10px; margin-bottom: 5px; display: block; }
+        .value { color: #fff; font-size: 12px; }
+        .farming-box { margin-top: auto; border: 2px solid #2ecc71; background: rgba(46, 204, 113, 0.1); padding: 15px; font-size: 10px; color: #2ecc71; line-height: 1.6; }
     </style>
 </head>
 <body>
 
+<div id="cursor-layer"><div class="crosshair"></div></div>
 <div id="map"></div>
 
+<div id="sidebar">
+    <div class="close-btn" onclick="closeSidebar()">[X]</div>
+    <div class="sidebar-image-container"><img id="sb-image" src="" class="sidebar-img"></div>
+    <h1 id="sb-title">Scanning...</h1>
+    <h2 id="sb-chinese">...</h2>
+    <div class="stat-box"><span class="label">TEMPERATURE</span><span class="value" id="sb-temp">--</span></div>
+    <div class="stat-box"><span class="label">CONDITION</span><span class="value" id="sb-cond">--</span></div>
+    <div class="farming-box" id="sb-farm">Click the map to scan a biome.</div>
+</div>
+
 <script>
-    const MAPBOX_KEY = config.MAPBOX_KEY
-    const WEATHER_KEY = config.WEATHER_KEY
-    // ---------------------
+    // --- 1. SETUP ---
+    // Access keys from config.js
+    const MAPBOX_KEY = config.MAPBOX_KEY;
+    const WEATHER_KEY = config.WEATHER_KEY;
 
     mapboxgl.accessToken = MAPBOX_KEY;
 
-    // Initialize Map
+    // --- 2. MAP INITIALIZATION ---
+    // We removed 'projection: globe' to fix the black screen issue.
     const map = new mapboxgl.Map({
         container: 'map',
-        style: 'mapbox://styles/mapbox/satellite-v9', // Satellite view for realism
-        center: [105.0, 40.0], // Start near Inner Mongolia
+        style: 'mapbox://styles/mapbox/satellite-v9', // Needed for water detection
+        center: [105.0, 40.0],
         zoom: 3,
-        projection: 'globe' // Makes it look like a 3D sphere
+        projection: 'globe'
     });
 
-    map.on('style.load', () => {
-        map.setFog({}); // Adds space atmosphere
-    });
-
-    // --- THE LOGIC: 10+ BIOMES ---
-    function determineBiome(temp, humidity, weatherMain) {
+    // --- 3. BIOME LOGIC ---
+    function determineBiome(temp, humidity, weatherMain, isWater) {
         
-        // 1. FROZEN BIOMES (Temp < -5)
-        if (temp < -10) {
-            return { name: "Ice Spikes", chinese: "冰刺平原 Bīng cì", color: "#A5F2F3", farm: "❌ Too cold for crops.", music: "Ambient Glass Sounds" };
-        }
-        if (temp < 0) {
-            return { name: "Snowy Tundra", chinese: "冻原 Dòngyuán", color: "#FFFFFF", farm: "⚠️ Water freezes instantly.", music: "Windy Synth" };
+        // Ocean Logic
+        if (isWater) {
+            if (temp < -2) return { name: "Frozen Ocean", chinese: "冻洋 (Dòng Yáng)", farm: "❄️ Ice mining.", image: "images/snowytundra.png" };
+            if (temp < 20) return { name: "Cold Ocean", chinese: "冷水海洋 (Lěngshuǐ)", farm: "🐟 Cod & Salmon.", image: "images/swamp.png" };
+            return { name: "Warm Ocean", chinese: "暖水海洋 (Nuǎnshuǐ)", farm: "🐡 Pufferfish & Coral.", image: "images/plains.png" };
         }
 
-        // 2. COLD/TEMPERATE BIOMES (Temp 0 - 15)
-        if (temp >= 0 && temp < 10) {
-            if (weatherMain === 'Rain' || weatherMain === 'Drizzle') {
-                return { name: "Cold Ocean/Shore", chinese: "寒冷海洋 Hánlěng Hǎiyáng", color: "#74b9ff", farm: "🐟 Fishing only.", music: "Soft Piano" };
-            }
-            return { name: "Old Growth Taiga", chinese: "针叶林 Zhēnyèlín", color: "#2d3436", farm: "🌲 Spruce & Berries.", music: "Deep Cello" };
-        }
+        // Land Logic
+        if (temp < -5) return { name: "Snowy Tundra", chinese: "冻原 (Dòngyuán)", farm: "Ice mining only.", image: "images/snowytundra.png" };
+        if (temp >= -5 && temp < 10) return { name: "Taiga", chinese: "针叶林 (Zhēnyèlín)", farm: "Spruce & Berries.", image: "images/taiga.png" };
         
         if (temp >= 10 && temp < 20) {
-            if (weatherMain === 'Rain') {
-                 return { name: "Swamp", chinese: "沼泽 Zhǎozé", color: "#6ab04c", farm: "🍄 Mushrooms & Slimes.", music: "Moody Jazz" };
-            }
-            if (humidity > 80) {
-                 return { name: "Dark Forest", chinese: "黑森林 Hēi sēnlín", color: "#006266", farm: "🍄 Mushrooms grow well.", music: "Mystery Theme" };
-            }
-            return { name: "Plains", chinese: "平原 Píngyuán", color: "#badc58", farm: "✅ Perfect for Wheat!", music: "Bob Dylan - Folk" };
+            if (humidity > 80) return { name: "Swamp", chinese: "沼泽 (Zhǎozé)", farm: "Slimes & Mushrooms.", image: "images/swamp.png" };
+            return { name: "Plains", chinese: "平原 (Píngyuán)", farm: "Great for Wheat!", image: "images/plains.png" };
         }
 
-        // 3. WARM/HOT BIOMES (Temp 20+)
         if (temp >= 20) {
-            // High Humidity = Jungle
-            if (humidity > 70) {
-                if (weatherMain === 'Rain') return { name: "Sparkling Rainforest", chinese: "雨林 (Yǔlín)", color: "#2ecc71", farm: "🍫 Cocoa Beans & Melons.", music: "Nature Sounds" };
-                return { name: "Jungle", chinese: "丛林 Cónglín", color: "#26de81", farm: "🎋 Bamboo & Melons.", music: "Tribal Drums" };
-            }
-            
-            // Moderate Humidity = Savanna
-            if (humidity > 40 && humidity <= 70) {
-                return { name: "Savanna", chinese: "热带草原 Rèdài Cǎoyuán", color: "#f6b93b", farm: "🌳 Acacia trees only.", music: "Lion King Vibes" };
-            }
-
-            // Low Humidity = Desert
-            if (humidity <= 40) {
-                if (temp > 35) return { name: "Badlands", chinese: "恶地 Èdì", color: "#d35400", farm: "❌ Gold mines here.", music: "Spaghetti Western" };
-                return { name: "Desert", chinese: "沙漠 Shāmò", color: "#f39c12", farm: "🌵 Cactus & Dead bush.", music: "The Smiths - Dry" };
-            }
+            // Using forest.png for Jungle fallback
+            if (humidity > 60) return { name: "Jungle", chinese: "丛林 (Cónglín)", farm: "Bamboo & Melons.", image: "images/forest.png" };
+            if (humidity < 40) return { name: "Desert", chinese: "沙漠 (Shāmò)", farm: "Cactus only.", image: "images/desert.png" };
+            return { name: "Savanna", chinese: "热带草原 (Rèdài)", farm: "Acacia trees.", image: "images/savanna.png" };
         }
 
-        // Default Fallback
-        return { name: "Forest", chinese: "森林 Sēnlín", color: "#27ae60", farm: "🍎 Apples & Oak.", music: "Acoustic Guitar" };
+        return { name: "Forest", chinese: "森林 (Sēnlín)", farm: "Apples & Oak.", image: "images/forest.png" };
     }
 
-    // --- CLICK HANDLER ---
+    // --- 4. CLICK INTERACTION ---
     map.on('click', async (e) => {
         const { lng, lat } = e.lngLat;
+        const sidebar = document.getElementById('sidebar');
 
-        // 1. Show a loading cursor
-        map.getCanvas().style.cursor = 'wait';
+        // Check for Water (Safe Check)
+        let isWater = false;
+        try {
+            const features = map.queryRenderedFeatures(e.point);
+            isWater = features.some(f => f.layer.id.includes('water'));
+        } catch (err) {
+            console.log("Water check failed, assuming land.");
+        }
 
         try {
-            console.log(`Using Weather Key: ${WEATHER_KEY}`);
-            // 2. Fetch Weather
             const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&units=metric&appid=${WEATHER_KEY}`);
             const data = await response.json();
 
-            if (data.cod !== 200) throw new Error("Weather API Error");
+            if (data.cod !== 200) {
+                alert("Weather API Error: " + data.message);
+                return;
+            }
 
-            // 3. Extract Data
             const temp = data.main.temp;
             const humidity = data.main.humidity;
-            const weatherMain = data.weather[0].main; // e.g. "Clear", "Rain"
-            const locationName = data.name || "Unknown Location";
+            const weatherMain = data.weather[0].main;
+            const biome = determineBiome(temp, humidity, weatherMain, isWater);
 
-            // 4. Calculate Biome
-            const biome = determineBiome(temp, humidity, weatherMain);
+            document.getElementById('sb-image').src = biome.image;
+            document.getElementById('sb-title').innerText = biome.name;
+            document.getElementById('sb-chinese').innerText = biome.chinese;
+            document.getElementById('sb-temp').innerText = Math.round(temp) + "°C";
+            document.getElementById('sb-cond').innerText = weatherMain + (isWater ? " (Water)" : "");
+            document.getElementById('sb-farm').innerText = biome.farm;
 
-            // 5. Create Popup HTML
-            const htmlContent = `
-                <div class="biome-title" style="color: ${biome.color}">${biome.name}</div>
-                <div class="chinese-text">${biome.chinese}</div>
-                <div class="stat-row">Temp: ${Math.round(temp)}°C</div>
-                <div class="stat-row">Humidity: ${humidity}%</div>
-                <div class="stat-row">Cond: ${weatherMain}</div>
-                <div class="farm-tip">${biome.farm}</div>
-                <div class="music-tip">♫ ${biome.music}</div>
-            `;
-
-            // 6. Show Popup
-            new mapboxgl.Popup()
-                .setLngLat([lng, lat])
-                .setHTML(htmlContent)
-                .addTo(map);
+            sidebar.classList.add('active');
 
         } catch (err) {
             console.error(err);
-            alert("Could not fetch biome data! Check your API Key.");
-        } finally {
-            map.getCanvas().style.cursor = 'crosshair';
         }
     });
 
+    function closeSidebar() { document.getElementById('sidebar').classList.remove('active'); }
+
+    document.addEventListener('mousemove', (e) => {
+        const cursor = document.getElementById('cursor-layer');
+        cursor.style.left = e.clientX + 'px';
+        cursor.style.top = e.clientY + 'px';
+    });
 </script>
 
 </body>
