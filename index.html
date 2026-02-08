@@ -13,8 +13,6 @@
     <style>
         body { margin: 0; padding: 0; font-family: 'Press Start 2P', cursive; overflow: hidden; background: #000; }
         
-        /* Cursor (Hidden to allow Steve Marker to be the focus, or keep crosshair?) 
-           Let's keep crosshair for aiming, Steve for marking. */
         #map { cursor: none; width: 100%; height: 100%; position: absolute; }
         #cursor-layer { position: fixed; pointer-events: none; z-index: 9999; mix-blend-mode: difference; }
         .crosshair { width: 24px; height: 24px; position: relative; transform: translate(-50%, -50%); }
@@ -22,50 +20,47 @@
         .crosshair::before { top: 11px; left: 0; width: 24px; height: 2px; }
         .crosshair::after { top: 0; left: 11px; width: 2px; height: 24px; }
 
-        /* --- STEVE MARKER --- */
         .steve-marker {
-            width: 40px;
-            height: 40px;
-            background-image: "images/steve.png";
-            background-size: cover;
-            border: 2px solid white;
-            box-shadow: 4px 4px 0 #000;
-            image-rendering: pixelated;
+            width: 32px; height: 64px;
+            background-image: url('images/steve.png');
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+            image-rendering: pixelated; 
         }
 
-        /* Sidebar */
         #sidebar {
             position: absolute; top: 0; right: -600px; width: 550px; height: 100%;
             background: rgba(16, 0, 16, 0.95); border-left: 6px solid #28022e;
             box-shadow: -10px 0 20px rgba(0,0,0,0.8); transition: right 0.3s ease-in-out;
             z-index: 100; padding: 30px; box-sizing: border-box; color: white;
-            display: flex; flex-direction: column;
+            display: flex; flex-direction: column; overflow-y: auto;
         }
         #sidebar.active { right: 0; }
         
         .close-btn { position: absolute; top: 20px; right: 20px; cursor: pointer; font-size: 24px; color: #ff5555; }
         
-        /* Header */
-        .header-container { display: flex; align-items: center; margin-bottom: 20px; border-bottom: 2px dashed #444; padding-bottom: 15px; }
+        .header-container { display: flex; align-items: center; margin-bottom: 25px; border-bottom: 2px dashed #444; padding-bottom: 20px; }
         .country-flag { width: 80px; height: 50px; border: 3px solid #fff; margin-right: 20px; box-shadow: 4px 4px 0 #000; }
         .country-info { display: flex; flex-direction: column; }
         .country-name { font-size: 16px; color: #ffff55; line-height: 1.5; text-transform: uppercase; margin-bottom: 5px; }
         .region-name { font-size: 10px; color: #aaa; text-transform: uppercase; }
 
-        /* Biome Image */
-        .sidebar-image-container { width: 100%; height: 220px; border: 4px solid #555; margin-bottom: 15px; background: #000; position: relative; }
+        .sidebar-image-container { width: 100%; height: 250px; border: 4px solid #555; margin-bottom: 25px; background: #000; position: relative; }
         .sidebar-img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
 
-        h1 { font-size: 20px; color: #fff; margin: 0; text-transform: uppercase; text-shadow: 3px 3px 0 #000; margin-bottom: 10px; line-height: 1.4; }
-        h2 { font-family: 'Noto Sans SC', sans-serif; font-size: 18px; color: #f1c40f; margin: 0 0 20px 0; border-bottom: 2px dashed #444; padding-bottom: 15px; letter-spacing: 1px; }
+        h1 { font-size: 24px; color: #fff; margin: 0; text-transform: uppercase; text-shadow: 3px 3px 0 #000; margin-bottom: 12px; line-height: 1.4; }
+        h2 { font-family: 'Noto Sans SC', sans-serif; font-size: 20px; color: #f1c40f; margin: 0 0 25px 0; border-bottom: 2px dashed #444; padding-bottom: 20px; letter-spacing: 1px; }
         
-        /* Stats Grid */
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        /* BIGGER STATS */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 30px; }
         .stat-box { background: rgba(255,255,255,0.08); padding: 15px; border: 3px solid #333; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-        .label { color: #aaa; font-size: 10px; margin-bottom: 8px; display: block; letter-spacing: 1px; }
-        .value { color: #fff; font-size: 12px; font-weight: bold; text-shadow: 2px 2px 0 #000; }
+        .label { color: #aaa; font-size: 10px; margin-bottom: 10px; display: block; letter-spacing: 1px; }
+        .value { color: #fff; font-size: 14px; font-weight: bold; text-shadow: 2px 2px 0 #000; }
 
-        .farming-box { margin-top: auto; border: 2px solid #2ecc71; background: rgba(46, 204, 113, 0.1); padding: 20px; font-size: 12px; color: #2ecc71; line-height: 1.6; }
+        /* BIGGER MOBS */
+        .mob-list { margin-bottom: 20px; }
+        .mob-title { font-size: 12px; color: #aaa; margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 6px; letter-spacing: 1px;}
+        .mobs { font-size: 16px; color: #2ecc71; line-height: 1.8; text-shadow: 1px 1px 0 #000; }
+        
     </style>
 </head>
 <body>
@@ -91,12 +86,17 @@
     
     <div class="stat-grid">
         <div class="stat-box"><span class="label">TEMP</span><span class="value" id="sb-temp">--</span></div>
-        <div class="stat-box"><span class="label">ELEVATION</span><span class="value" id="sb-elev">--</span></div>
+        <div class="stat-box"><span class="label">TIME</span><span class="value" id="sb-time">--</span></div>
+        <div class="stat-box"><span class="label">ELEV</span><span class="value" id="sb-elev">--</span></div>
         <div class="stat-box"><span class="label">PRECIPITATION</span><span class="value" id="sb-precip">--</span></div>
         <div class="stat-box"><span class="label">HUMIDITY</span><span class="value" id="sb-hum">--</span></div>
+        <div class="stat-box"><span class="label">COORDS</span><span class="value" id="sb-coords">--</span></div>
     </div>
 
-    <div class="farming-box" id="sb-farm">Click a location to scan.</div>
+    <div class="mob-list">
+        <div class="mob-title">LIKELY MOBS</div>
+        <div class="mobs" id="sb-mobs">--</div>
+    </div>
 </div>
 
 <script>
@@ -107,13 +107,12 @@
 
     const map = new mapboxgl.Map({
         container: 'map',
-        style: 'mapbox://styles/mapbox/satellite-streets-v12', 
+        style: 'mapbox://styles/mapbox/satellite-v9',
         center: [30.0, 20.0], 
         zoom: 2.5,
         projection: 'globe' 
     });
 
-    // Steve Marker Variable
     let steveMarker = null;
 
     map.on('style.load', () => {
@@ -122,183 +121,187 @@
         map.setFog({ 'color': 'rgb(10, 10, 20)', 'high-color': 'rgb(30, 30, 50)', 'horizon-blend': 0.1, 'star-intensity': 0.6 });
     });
 
-    // --- BIOME DICTIONARIES ---
-    const REGION_BIOMES = {
-        'California': { biome: 'Badlands', chinese: '恶地 Èdì', image: 'images/desert.png', farm: '⛏️ Gold Mines.' },
-        'Nevada': { biome: 'Desert', chinese: '沙漠 Shāmò', image: 'images/desert.png', farm: '🌵 Cactus.' },
-        'Arizona': { biome: 'Desert', chinese: '沙漠 Shāmò', image: 'images/desert.png', farm: '🌵 Cactus.' },
-        'Florida': { biome: 'Mangrove Swamp', chinese: '红树林 Hóngshùlín', image: 'images/swamp.png', farm: '🐸 Frogs.' },
-        'Louisiana': { biome: 'Swamp', chinese: '沼泽 Zhǎozé', image: 'images/swamp.png', farm: '🍄 Slimes.' },
-        'Alaska': { biome: 'Snowy Taiga', chinese: '积雪针叶林 Jīxuě Zhēnyèlín', image: 'images/taiga.png', farm: '🌲 Foxes.' },
-        'Hawaii': { biome: 'Tropical Jungle', chinese: '热带丛林 Rèdài Cónglín', image: 'images/forest.png', farm: '🥥 Coconuts.' },
-        'Yukon': { biome: 'Snowy Tundra', chinese: '冻原 Dòngyuán', image: 'images/snowytundra.png', farm: '❄️ Polar Bears.' },
-        'Siberia': { biome: 'Snowy Taiga', chinese: '积雪针叶林 Jīxuě Zhēnyèlín', image: 'images/taiga.png', farm: '🌲 Spruce.' }
-    };
-
-    const COUNTRY_BIOMES = {
-        'SA': { biome: 'Desert', chinese: '沙漠 Shāmò', image: 'images/desert.png', farm: '🌵 Cactus & Oil.' }, 
-        'EG': { biome: 'Desert', chinese: '沙漠 Shāmò', image: 'images/desert.png', farm: '🌵 Sugar Cane.' },
-        'AE': { biome: 'Desert', chinese: '沙漠 Shāmò', image: 'images/desert.png', farm: '🌵 Cactus.' },
-        'OM': { biome: 'Badlands', chinese: '恶地 Èdì', image: 'images/desert.png', farm: '⛏️ Gold.' },
-        'BR': { biome: 'Sparse Jungle', chinese: '稀疏丛林 Xīshū Cónglín', image: 'images/forest.png', farm: '🎋 Bamboo.' },
-        'ID': { biome: 'Bamboo Jungle', chinese: '竹林 Zhúlín', image: 'images/forest.png', farm: '🎋 Pandas.' },
-        'VN': { biome: 'Jungle', chinese: '丛林 Cónglín', image: 'images/forest.png', farm: '🎋 Bamboo.' },
-        'JP': { biome: 'Cherry Grove', chinese: '樱花树林 Yīnghuā Shùlín', image: 'images/forest.png', farm: '🌸 Pink Petals.' },
-        'IS': { biome: 'Basalt Deltas', chinese: '玄武岩三角洲 Xuánwǔyán', image: 'images/taiga.png', farm: '🌋 Magma.' },
-        'MG': { biome: 'Mushroom Fields', chinese: '蘑菇岛 Mógū Dǎo', image: 'images/swamp.png', farm: '🍄 Mooshrooms.' },
-        'NP': { biome: 'Jagged Peaks', chinese: '尖峭山峰 Jiānqiào Shānfēng', image: 'images/snowytundra.png', farm: '🐐 Goats.' }, 
-        'GL': { biome: 'Ice Spikes', chinese: '冰刺平原 Bīng Cì', image: 'images/snowytundra.png', farm: '❌ Polar Bears.', force: true },
-        'RU': { biome: 'Snowy Taiga', chinese: '积雪针叶林 Jīxuě Zhēnyèlín', image: 'images/taiga.png', farm: '🌲 Foxes.' },
-        'CA': { biome: 'Taiga', chinese: '针叶林 Zhēnyèlín', image: 'images/taiga.png', farm: '🌲 Spruce.' },
-    };
-
-    // --- OCEAN LOGIC (Correct Minecraft Variants) ---
-    function getOceanBiome(temp, isDeep) {
-        let name = "Ocean";
-        let chinese = "海洋 Hǎiyáng";
-        let img = "images/swamp.png"; // Placeholder for water
-        let farm = "🐟 Cod & Squid.";
-
-        if (temp < -2) {
-             name = isDeep ? "Deep Frozen Ocean" : "Frozen Ocean";
-             chinese = isDeep ? "深冻洋 Shēn Dòngyáng" : "冻洋 Dòngyáng";
-             img = "images/snowytundra.png"; 
-             farm = "❄️ Blue Ice & Polar Bears.";
-        } 
-        else if (temp < 10) {
-             name = isDeep ? "Deep Cold Ocean" : "Cold Ocean";
-             chinese = isDeep ? "深冷水海洋 Shēn Lěngshuǐ" : "冷水海洋 Lěngshuǐ";
-             farm = "🐟 Salmon & Cod.";
-        }
-        else if (temp < 25) {
-             name = isDeep ? "Deep Ocean" : "Ocean"; // Normal Ocean
-             chinese = isDeep ? "深海 Shēnhǎi" : "海洋 Hǎiyáng";
-             farm = "🦑 Glow Squid & Kelp.";
-        }
-        else if (temp < 30) {
-             name = isDeep ? "Deep Lukewarm Ocean" : "Lukewarm Ocean";
-             chinese = isDeep ? "深温水海洋 Shēn Wēnshuǐ" : "温水海洋 Wēnshuǐ";
-             img = "images/plains.png"; 
-             farm = "🐡 Pufferfish & Tropical Fish.";
-        }
-        else {
-             name = "Warm Ocean"; // Warm ocean is rarely "Deep" in Minecraft logic
-             chinese = "暖水海洋 Nuǎnshuǐ";
-             img = "images/plains.png"; 
-             farm = "🐚 Coral Reefs & Pickles.";
-        }
-        return { biome: name, chinese: chinese, image: img, farm: farm };
-    }
-
-    // --- LAND LOGIC ---
-    function getBiomeByLat(lat, isWater) {
-        if (isWater) return { biome: 'River', chinese: '河流 Héliú', image: 'images/swamp.png', farm: '🎣 Fishing.' };
+    // --- BIOME DATA (Cleaned Images & Pinyin) ---
+    const BIOME_DATA = {
+        'Badlands': { chinese: '恶地 Èdì', image: 'images/badlands.png', mobs: 'Spiders (Night)' },
+        'Desert': { chinese: '沙漠 Shāmò', image: 'images/desert.png', mobs: 'Husks, Rabbits' },
+        'Mangrove Swamp': { chinese: '红树林沼泽 Hóngshùlín', image: 'images/mangroveswamp.png', mobs: 'Warm Frogs, Slimes' },
+        'Swamp': { chinese: '沼泽 Zhǎozé', image: 'images/swamp.png', mobs: 'Slimes, Witches' },
+        'Snowy Taiga': { chinese: '积雪针叶林 Jīxuě Zhēnyèlín', image: 'images/snowytaiga.png', mobs: 'Foxes (White), Wolves' },
+        'Tropical Jungle': { chinese: '热带丛林 Rèdài Cónglín', image: 'images/tropicaljungle.png', mobs: 'Ocelots, Parrots' },
+        'Snowy Tundra': { chinese: '冻原 Dòngyuán', image: 'images/snowytundra.png', mobs: 'Strays, Polar Bears' },
+        'Sparse Jungle': { chinese: '稀疏丛林 Xīshū Cónglín', image: 'images/sparsejungle.png', mobs: 'Pandas, Parrots' },
+        'Bamboo Jungle': { chinese: '竹林 Zhúlín', image: 'images/bamboojungle.png', mobs: 'Pandas' },
+        'Jungle': { chinese: '丛林 Cónglín', image: 'images/jungle.png', mobs: 'Ocelots, Parrots' },
+        'Cherry Grove': { chinese: '樱花树林 Yīnghuā Shùlín', image: 'images/cherrygrove.png', mobs: 'Bees, Sheep' },
+        'Basalt Deltas': { chinese: '玄武岩三角洲 Xuánwǔyán', image: 'images/basaltdeltas.png', mobs: 'Magma Cubes' },
+        'Mushroom Fields': { chinese: '蘑菇岛 Mógū Dǎo', image: 'images/mushroomfields.png', mobs: 'Mooshrooms' },
+        'Jagged Peaks': { chinese: '尖峭山峰 Jiānqiào Shānfēng', image: 'images/jaggedpeaks.png', mobs: 'Goats' },
+        'Ice Spikes': { chinese: '冰刺平原 Bīng Cì', image: 'images/icespikes.png', mobs: 'Polar Bears' },
+        'Taiga': { chinese: '针叶林 Zhēnyèlín', image: 'images/taiga.png', mobs: 'Foxes, Wolves' },
+        'Old Growth Taiga': { chinese: '原生针叶林 Yuánshēng', image: 'images/oldgrowthtaiga.png', mobs: 'Wolves' },
+        'Birch Forest': { chinese: '白桦森林 Báihuà Sēnlín', image: 'images/birchforest.png', mobs: 'Cows, Sheep' },
+        'Savanna': { chinese: '热带草原 Rèdài Cǎoyuán', image: 'images/savanna.png', mobs: 'Llamas, Horses' },
+        'Savanna Plateau': { chinese: '热带高原 Rèdài Gāoyuán', image: 'images/savannaplateau.png', mobs: 'Llamas' },
+        'Plains': { chinese: '平原 Píngyuán', image: 'images/plains.png', mobs: 'Horses, Donkeys' },
+        'River': { chinese: '河流 Héliú', image: 'images/river.png', mobs: 'Drowned (Night)' },
+        'Stony Peaks': { chinese: '石峰 Shífēng', image: 'images/stonypeaks.png', mobs: 'Goats' },
         
-        const abs = Math.abs(lat);
-        if (abs > 60) return { biome: 'Snowy Plains', chinese: '积雪平原 Jīxuě Píngyuán', image: 'images/snowytundra.png', farm: '❄️ Ice.' };
-        if (abs > 50) return { biome: 'Old Growth Taiga', chinese: '原生针叶林 Yuánshēng', image: 'images/taiga.png', farm: '🌲 Spruce.' };
-        if (abs > 35) return { biome: 'Birch Forest', chinese: '白桦森林 Báihuà', image: 'images/forest.png', farm: '🌳 Birch Wood.' };
-        if (abs > 23) return { biome: 'Desert', chinese: '沙漠 Shāmò', image: 'images/desert.png', farm: '🌵 Cactus.' };
-        if (abs > 15) return { biome: 'Savanna Plateau', chinese: '热带高原 Rèdài Gāoyuán', image: 'images/savanna.png', farm: '🦁 Acacia.' };
-        if (abs > 0) return { biome: 'Jungle', chinese: '丛林 Cónglín', image: 'images/forest.png', farm: '🎋 Bamboo.' };
-        return { biome: 'Plains', chinese: '平原 Píngyuán', image: 'images/plains.png', farm: '🌾 Wheat.' };
+        // OCEAN VARIANTS
+        'Ocean': { chinese: '海洋 Hǎiyáng', image: 'images/ocean.png', mobs: 'Squid, Dolphins' },
+        'Deep Ocean': { chinese: '深海 Shēnhǎi', image: 'images/deepocean.png', mobs: 'Guardians' },
+        'Frozen Ocean': { chinese: '冻洋 Dòng Yáng', image: 'images/frozenocean.png', mobs: 'Polar Bears' },
+        'Deep Frozen Ocean': { chinese: '深冻洋 Shēn Dòngyáng', image: 'images/deepfrozenocean.png', mobs: 'Polar Bears' },
+        'Cold Ocean': { chinese: '冷水海洋 Lěngshuǐ', image: 'images/coldocean.png', mobs: 'Salmon, Dolphins' },
+        'Deep Cold Ocean': { chinese: '深冷水海洋 Shēn Lěngshuǐ', image: 'images/deepcoldocean.png', mobs: 'Salmon' },
+        'Lukewarm Ocean': { chinese: '温水海洋 Wēnshuǐ', image: 'images/lukewarmocean.png', mobs: 'Pufferfish' },
+        'Deep Lukewarm Ocean': { chinese: '深温水海洋 Shēn Wēnshuǐ', image: 'images/deeplukewarmocean.png', mobs: 'Pufferfish' },
+        'Warm Ocean': { chinese: '暖水海洋 Nuǎnshuǐ', image: 'images/warmocean.png', mobs: 'Tropical Fish' }
+    };
+
+    const REGION_MAP = {
+        'California': 'Badlands', 'Nevada': 'Desert', 'Arizona': 'Desert', 'Florida': 'Mangrove Swamp', 'Louisiana': 'Swamp', 'Alaska': 'Snowy Taiga', 'Hawaii': 'Tropical Jungle', 'Yukon': 'Snowy Tundra', 'Siberia': 'Snowy Taiga'
+    };
+    const COUNTRY_MAP = {
+        'SA': 'Desert', 'EG': 'Desert', 'AE': 'Desert', 'OM': 'Badlands', 'BR': 'Sparse Jungle', 'ID': 'Bamboo Jungle', 'VN': 'Jungle', 'JP': 'Cherry Grove', 'IS': 'Basalt Deltas', 'MG': 'Mushroom Fields', 'NP': 'Jagged Peaks', 'GL': 'Ice Spikes', 'AQ': 'Ice Spikes', 'RU': 'Snowy Taiga', 'CA': 'Taiga'
+    };
+
+    // --- LOGIC FUNCTIONS ---
+    function getOceanBiome(temp, isDeep) {
+        let prefix = isDeep ? "Deep " : "";
+        if (temp < -2) return isDeep ? 'Deep Frozen Ocean' : 'Frozen Ocean';
+        if (temp < 10) return isDeep ? 'Deep Cold Ocean' : 'Cold Ocean';
+        if (temp < 25) return isDeep ? 'Deep Ocean' : 'Ocean';
+        if (temp < 30) return isDeep ? 'Deep Lukewarm Ocean' : 'Lukewarm Ocean';
+        return 'Warm Ocean';
     }
 
-    // --- CLICK HANDLER ---
+    function getBiomeByLat(lat, humidity, elevation) {
+        const abs = Math.abs(lat);
+        if (abs > 60) return 'Snowy Tundra';
+        if (abs > 50) return (humidity > 60) ? 'Old Growth Taiga' : 'Taiga';
+        if (abs > 35) return (humidity > 70) ? 'Birch Forest' : 'Plains';
+        if (abs > 23) {
+            if (humidity > 70) return 'Mangrove Swamp';
+            if (humidity < 30) return 'Desert';
+            return (elevation > 1000) ? 'Savanna Plateau' : 'Savanna';
+        }
+        if (abs >= 0) {
+            if (humidity > 80) return 'Bamboo Jungle';
+            if (humidity > 50) return 'Jungle';
+            if (humidity < 40) return 'Sparse Jungle';
+            return 'Jungle';
+        }
+        return 'Plains';
+    }
+
     map.on('click', async (e) => {
         const { lng, lat } = e.lngLat;
         const sidebar = document.getElementById('sidebar');
 
-        // 1. PLACE STEVE MARKER
         if (steveMarker) steveMarker.remove();
         const el = document.createElement('div');
         el.className = 'steve-marker';
         steveMarker = new mapboxgl.Marker(el).setLngLat(e.lngLat).addTo(map);
 
-        // 2. DETECT WATER MAPBOX (Visual check)
-        const bbox = [[e.point.x - 10, e.point.y - 10], [e.point.x + 10, e.point.y + 10]];
-        const isWaterMapbox = map.queryRenderedFeatures(bbox).some(f => f.layer.id.includes('water') || f.layer.id.includes('ocean'));
         const elevation = map.queryTerrainElevation(e.lngLat) || 0;
 
+        let geoData = { countryCode: null, countryName: null, regionName: null };
+        let weatherData = { main: { temp: 20, humidity: 50 }, weather: [{ main: 'Clear' }], timezone: 0 };
+        
         try {
-            // A. GEOCODE
-            const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
-            const geoData = await geoRes.json();
+            const mapboxUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=country,region&access_token=${MAPBOX_KEY}`;
+            const mbRes = await fetch(mapboxUrl);
+            const mbJson = await mbRes.json();
             
-            // B. WEATHER
+            if (mbJson.features && mbJson.features.length > 0) {
+                const countryFeat = mbJson.features.find(f => f.id.startsWith('country'));
+                if (countryFeat) {
+                    geoData.countryName = countryFeat.text;
+                    if (countryFeat.properties && countryFeat.properties.short_code) {
+                        geoData.countryCode = countryFeat.properties.short_code.toUpperCase();
+                    }
+                }
+                const regionFeat = mbJson.features.find(f => f.id.startsWith('region'));
+                if (regionFeat) {
+                    geoData.regionName = regionFeat.text;
+                }
+            }
+        } catch (e) { console.warn("GeoAPI Failed"); }
+
+        try {
             const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&units=metric&appid=${WEATHER_KEY}`);
-            const weatherData = await weatherRes.json();
-            const temp = Math.round(weatherData.main.temp);
-            const humidity = weatherData.main.humidity;
-            const weatherMain = weatherData.weather[0].main; 
-
-            // C. DETERMINE BIOME
-            let result;
-            const countryCode = geoData.countryCode; 
-            const regionName = geoData.principalSubdivision; 
-            // Is it legally international waters?
-            const isDeepOcean = !geoData.countryName; 
-
-            // --- MASTER LOGIC ---
-
-            // 1. OCEAN OVERRIDE (If Mapbox sees water AND (No Country OR API says water))
-            if (isWaterMapbox && (isDeepOcean || geoData.locality === "")) {
-                result = getOceanBiome(temp, isDeepOcean);
-            }
-            // 2. High Elevation
-            else if (elevation > 2000) {
-                 let snowLine = Math.abs(lat) < 30 ? 4000 : 1500;
-                 if (elevation > snowLine) {
-                    result = { biome: 'Jagged Peaks', chinese: '尖峭山峰 Jiānqiào', image: 'images/snowytundra.png', farm: '🐐 Goats.' };
-                 } else {
-                    result = { biome: 'Stony Peaks', chinese: '石峰 Shífēng', image: 'images/savanna.png', farm: '⛏️ Iron.' };
-                 }
-            }
-            // 3. Known Region/Country
-            else if (REGION_BIOMES[regionName]) {
-                 result = REGION_BIOMES[regionName];
-            }
-            else if (COUNTRY_BIOMES[countryCode]) {
-                 result = COUNTRY_BIOMES[countryCode];
-            }
-            // 4. Fallback
-            else {
-                 result = getBiomeByLat(lat, false); // Pass 'false' because we handled real oceans in step 1
-            }
-
-            // D. UPDATE UI
-            document.getElementById('sb-country').innerText = geoData.countryName || "Deep Ocean";
-            document.getElementById('sb-region').innerText = regionName || "";
-            
-            const flagImg = document.getElementById('sb-flag');
-            if (countryCode) {
-                flagImg.src = `https://flagcdn.com/w80/${countryCode.toLowerCase()}.png`;
-                flagImg.style.display = 'block';
-            } else {
-                flagImg.style.display = 'none';
-            }
-
-            document.getElementById('sb-biome').innerText = result.biome;
-            document.getElementById('sb-chinese').innerText = result.chinese;
-            document.getElementById('sb-image').src = result.image;
-            document.getElementById('sb-farm').innerText = result.farm;
-
-            // Stats
-            document.getElementById('sb-temp').innerText = temp + "°C";
-            document.getElementById('sb-elev').innerText = Math.round(elevation) + "m";
-            document.getElementById('sb-hum').innerText = humidity + "%";
-            
-            let precipText = "NONE";
-            if (weatherMain === "Rain" || weatherMain === "Drizzle") precipText = "RAIN 🌧️";
-            if (weatherMain === "Snow") precipText = "SNOW ❄️";
-            if (weatherMain === "Thunderstorm") precipText = "STORM ⛈️";
-            document.getElementById('sb-precip').innerText = precipText;
-
-            sidebar.classList.add('active');
-
-        } catch (err) {
-            console.error(err);
+            if (weatherRes.ok) weatherData = await weatherRes.json();
+        } catch (e) { 
+            const absLat = Math.abs(lat);
+            weatherData.main.temp = 30 - (absLat * 0.5) - (elevation / 200);
         }
+
+        const temp = Math.round(weatherData.main.temp);
+        const humidity = weatherData.main.humidity;
+        const weatherMain = weatherData.weather[0].main;
+        const hours = new Date().getHours(); 
+        const isNight = hours < 6 || hours > 18;
+        const timeString = isNight ? "NIGHT" : "DAY";
+
+        let biomeKey = "Plains";
+        const countryCode = geoData.countryCode; 
+        const regionName = geoData.regionName; 
+        
+        const isDeepOcean = !countryCode;
+
+        if (isDeepOcean) {
+            if (lat < -60 && elevation > 10) biomeKey = 'Ice Spikes'; 
+            else biomeKey = getOceanBiome(temp, isDeepOcean);
+        }
+        else if (elevation > 2000) {
+            let snowLine = Math.abs(lat) < 30 ? 4000 : 1500;
+            biomeKey = (elevation > snowLine) ? 'Jagged Peaks' : 'Stony Peaks';
+        }
+        else if (REGION_MAP[regionName]) biomeKey = REGION_MAP[regionName];
+        else if (COUNTRY_MAP[countryCode]) biomeKey = COUNTRY_MAP[countryCode];
+        else biomeKey = getBiomeByLat(lat, humidity, elevation); 
+
+        if (!BIOME_DATA[biomeKey]) biomeKey = 'Plains';
+        const data = BIOME_DATA[biomeKey];
+
+        let displayName = geoData.countryName || "Deep Ocean";
+        if (lat < -60 && elevation > 10) displayName = "Antarctica";
+
+        document.getElementById('sb-country').innerText = displayName;
+        document.getElementById('sb-region').innerText = regionName || "";
+        
+        const flagImg = document.getElementById('sb-flag');
+        if (countryCode) {
+            flagImg.src = `https://flagcdn.com/w80/${countryCode.toLowerCase()}.png`;
+            flagImg.style.display = 'block';
+        } else {
+            flagImg.style.display = 'none';
+        }
+
+        document.getElementById('sb-biome').innerText = biomeKey;
+        document.getElementById('sb-chinese').innerText = data.chinese;
+        document.getElementById('sb-image').src = data.image;
+        document.getElementById('sb-mobs').innerText = data.mobs;
+
+        document.getElementById('sb-temp').innerText = temp + "°C";
+
+        let safeElev = Math.round(elevation);
+        if (safeElev < 0) safeElev = 0; 
+
+        document.getElementById('sb-elev').innerText = safeElev + "m";
+        
+        document.getElementById('sb-hum').innerText = humidity + "%";
+        document.getElementById('sb-time').innerText = timeString;
+        document.getElementById('sb-coords').innerText = `${lat.toFixed(1)}, ${lng.toFixed(1)}`;
+        
+        let precipText = "NONE";
+        if (weatherMain === "Rain" || weatherMain === "Drizzle") precipText = "RAIN 🌧️";
+        if (weatherMain === "Snow") precipText = "SNOW ❄️";
+        if (weatherMain === "Thunderstorm") precipText = "STORM ⛈️";
+        document.getElementById('sb-precip').innerText = precipText;
+
+        sidebar.classList.add('active');
     });
 
     function closeSidebar() { document.getElementById('sidebar').classList.remove('active'); }
