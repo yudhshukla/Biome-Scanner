@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Minecraft Atlas Scanner</title>
+    <title>Minecraft Biome Scanner</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet">
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
@@ -290,7 +290,7 @@
         if (safeElev < 0) safeElev = 0; 
 
         document.getElementById('sb-elev').innerText = safeElev + "m";
-        
+
         document.getElementById('sb-hum').innerText = humidity + "%";
         document.getElementById('sb-time').innerText = timeString;
         document.getElementById('sb-coords').innerText = `${lat.toFixed(1)}, ${lng.toFixed(1)}`;
