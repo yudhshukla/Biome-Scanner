@@ -6,7 +6,7 @@
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet">
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
-    <script src="config.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@700&display=swap" rel="stylesheet">
     
@@ -21,14 +21,14 @@
         .crosshair::after { top: 0; left: 11px; width: 2px; height: 24px; }
 
         .steve-marker {
-            width: 32px; height: 64px;
+            width: 25px; height: 50px;
             background-image: url('images/steve.png');
             background-size: contain; background-repeat: no-repeat; background-position: center;
             image-rendering: pixelated; 
         }
 
         #sidebar {
-            position: absolute; top: 0; right: -600px; width: 550px; height: 100%;
+            position: absolute; top: 0; right: -550px; width: 500px; height: 100%;
             background: rgba(16, 0, 16, 0.95); border-left: 6px solid #28022e;
             box-shadow: -10px 0 20px rgba(0,0,0,0.8); transition: right 0.3s ease-in-out;
             z-index: 100; padding: 30px; box-sizing: border-box; color: white;
@@ -50,13 +50,33 @@
         h1 { font-size: 24px; color: #fff; margin: 0; text-transform: uppercase; text-shadow: 3px 3px 0 #000; margin-bottom: 12px; line-height: 1.4; }
         h2 { font-family: 'Noto Sans SC', sans-serif; font-size: 20px; color: #f1c40f; margin: 0 0 25px 0; border-bottom: 2px dashed #444; padding-bottom: 20px; letter-spacing: 1px; }
         
-        /* BIGGER STATS */
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 30px; }
-        .stat-box { background: rgba(255,255,255,0.08); padding: 15px; border: 3px solid #333; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-        .label { color: #aaa; font-size: 10px; margin-bottom: 10px; display: block; letter-spacing: 1px; }
-        .value { color: #fff; font-size: 14px; font-weight: bold; text-shadow: 2px 2px 0 #000; }
+        /* --- UPDATED UNIFORM GRID --- */
+        .stat-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); /* Forces 3 equal columns */
+            gap: 12px; 
+            margin-bottom: 30px; 
+            width: 100%;
+        }
+        .stat-box { 
+            background: rgba(255,255,255,0.08); 
+            padding: 10px; 
+            border: 3px solid #333; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            text-align: center; 
+            
+            /* KEY FIXES FOR UNIFORMITY */
+            width: 100%;
+            height: 70px; /* Fixed height ensures they line up */
+            box-sizing: border-box; /* Keeps padding inside the box */
+        }
+        .label { color: #aaa; font-size: 9px; margin-bottom: 8px; display: block; letter-spacing: 1px; text-transform: uppercase; }
+        .value { color: #fff; font-size: 13px; font-weight: bold; text-shadow: 2px 2px 0 #000; white-space: nowrap; }
 
-        /* BIGGER MOBS */
+        /* MOBS */
         .mob-list { margin-bottom: 20px; }
         .mob-title { font-size: 12px; color: #aaa; margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 6px; letter-spacing: 1px;}
         .mobs { font-size: 16px; color: #2ecc71; line-height: 1.8; text-shadow: 1px 1px 0 #000; }
@@ -100,32 +120,14 @@
 </div>
 
 <script>
-    const MAPBOX_KEY = config.MAPBOX_KEY;
-    const WEATHER_KEY = config.WEATHER_KEY;
-
-    mapboxgl.accessToken = MAPBOX_KEY;
-
-    const map = new mapboxgl.Map({
-        container: 'map',
-        style: 'mapbox://styles/mapbox/satellite-v9',
-        center: [30.0, 20.0], 
-        zoom: 2.5,
-        projection: 'globe' 
-    });
-
+    let map;
     let steveMarker = null;
 
-    map.on('style.load', () => {
-        map.addSource('mapbox-dem', { 'type': 'raster-dem', 'url': 'mapbox://mapbox.mapbox-terrain-dem-v1', 'tileSize': 512, 'maxzoom': 14 });
-        map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
-        map.setFog({ 'color': 'rgb(10, 10, 20)', 'high-color': 'rgb(30, 30, 50)', 'horizon-blend': 0.1, 'star-intensity': 0.6 });
-    });
-
-    // --- BIOME DATA (Cleaned Images & Pinyin) ---
+    // --- BIOME DATA ---
     const BIOME_DATA = {
         'Badlands': { chinese: '恶地 Èdì', image: 'images/badlands.png', mobs: 'Spiders (Night)' },
         'Desert': { chinese: '沙漠 Shāmò', image: 'images/desert.png', mobs: 'Husks, Rabbits' },
-        'Mangrove Swamp': { chinese: '红树林沼泽 Hóngshùlín', image: 'images/mangroveswamp.png', mobs: 'Warm Frogs, Slimes' },
+        'Mangrove Swamp': { chinese: '红树林沼泽 Hóng Shùlín Zhǎozé', image: 'images/mangroveswamp.png', mobs: 'Warm Frogs, Slimes' },
         'Swamp': { chinese: '沼泽 Zhǎozé', image: 'images/swamp.png', mobs: 'Slimes, Witches' },
         'Snowy Taiga': { chinese: '积雪针叶林 Jīxuě Zhēnyèlín', image: 'images/snowytaiga.png', mobs: 'Foxes (White), Wolves' },
         'Tropical Jungle': { chinese: '热带丛林 Rèdài Cónglín', image: 'images/tropicaljungle.png', mobs: 'Ocelots, Parrots' },
@@ -134,12 +136,12 @@
         'Bamboo Jungle': { chinese: '竹林 Zhúlín', image: 'images/bamboojungle.png', mobs: 'Pandas' },
         'Jungle': { chinese: '丛林 Cónglín', image: 'images/jungle.png', mobs: 'Ocelots, Parrots' },
         'Cherry Grove': { chinese: '樱花树林 Yīnghuā Shùlín', image: 'images/cherrygrove.png', mobs: 'Bees, Sheep' },
-        'Basalt Deltas': { chinese: '玄武岩三角洲 Xuánwǔyán', image: 'images/basaltdeltas.png', mobs: 'Magma Cubes' },
+        'Basalt Deltas': { chinese: '玄武岩三角洲 Xuánwǔyán Sānjiǎozhōu', image: 'images/basaltdeltas.png', mobs: 'Magma Cubes' },
         'Mushroom Fields': { chinese: '蘑菇岛 Mógū Dǎo', image: 'images/mushroomfields.png', mobs: 'Mooshrooms' },
         'Jagged Peaks': { chinese: '尖峭山峰 Jiānqiào Shānfēng', image: 'images/jaggedpeaks.png', mobs: 'Goats' },
-        'Ice Spikes': { chinese: '冰刺平原 Bīng Cì', image: 'images/icespikes.png', mobs: 'Polar Bears' },
+        'Ice Spikes': { chinese: '冰刺 Bīng Cì', image: 'images/icespikes.png', mobs: 'Polar Bears' },
         'Taiga': { chinese: '针叶林 Zhēnyèlín', image: 'images/taiga.png', mobs: 'Foxes, Wolves' },
-        'Old Growth Taiga': { chinese: '原生针叶林 Yuánshēng', image: 'images/oldgrowthtaiga.png', mobs: 'Wolves' },
+        'Old Growth Taiga': { chinese: '原生针叶林 Yuánshēng Zhēn Yè Lín', image: 'images/oldgrowthtaiga.png', mobs: 'Wolves' },
         'Birch Forest': { chinese: '白桦森林 Báihuà Sēnlín', image: 'images/birchforest.png', mobs: 'Cows, Sheep' },
         'Savanna': { chinese: '热带草原 Rèdài Cǎoyuán', image: 'images/savanna.png', mobs: 'Llamas, Horses' },
         'Savanna Plateau': { chinese: '热带高原 Rèdài Gāoyuán', image: 'images/savannaplateau.png', mobs: 'Llamas' },
@@ -152,11 +154,11 @@
         'Deep Ocean': { chinese: '深海 Shēnhǎi', image: 'images/deepocean.png', mobs: 'Guardians' },
         'Frozen Ocean': { chinese: '冻洋 Dòng Yáng', image: 'images/frozenocean.png', mobs: 'Polar Bears' },
         'Deep Frozen Ocean': { chinese: '深冻洋 Shēn Dòngyáng', image: 'images/deepfrozenocean.png', mobs: 'Polar Bears' },
-        'Cold Ocean': { chinese: '冷水海洋 Lěngshuǐ', image: 'images/coldocean.png', mobs: 'Salmon, Dolphins' },
-        'Deep Cold Ocean': { chinese: '深冷水海洋 Shēn Lěngshuǐ', image: 'images/coldocean.png', mobs: 'Salmon' },
-        'Lukewarm Ocean': { chinese: '温水海洋 Wēnshuǐ', image: 'images/lukewarmocean.png', mobs: 'Pufferfish' },
-        'Deep Lukewarm Ocean': { chinese: '深温水海洋 Shēn Wēnshuǐ', image: 'images/deeplukewarmocean.png', mobs: 'Pufferfish' },
-        'Warm Ocean': { chinese: '暖水海洋 Nuǎnshuǐ', image: 'images/warmocean.png', mobs: 'Tropical Fish' }
+        'Cold Ocean': { chinese: '冷水海洋 Lěngshuǐ Hǎiyáng', image: 'images/coldocean.png', mobs: 'Salmon, Dolphins' },
+        'Deep Cold Ocean': { chinese: '深冷水海洋 Shēn Lěngshuǐ Hǎiyáng', image: 'images/coldocean.png', mobs: 'Salmon' },
+        'Lukewarm Ocean': { chinese: '温水海洋 Wēnshu Hǎiyáng', image: 'images/lukewarmocean.png', mobs: 'Pufferfish' },
+        'Deep Lukewarm Ocean': { chinese: '深温水海洋 Shēn Wēnshuǐ Hǎiyáng', image: 'images/deeplukewarmocean.png', mobs: 'Pufferfish' },
+        'Warm Ocean': { chinese: '暖水海洋 Nuǎnshuǐ Hǎiyáng', image: 'images/warmocean.png', mobs: 'Tropical Fish' }
     };
 
     const REGION_MAP = {
@@ -195,7 +197,43 @@
         return 'Plains';
     }
 
-    map.on('click', async (e) => {
+    // --- INIT ---
+    async function init() {
+        try {
+            const res = await fetch('/api/config');
+            const data = await res.json();
+            mapboxgl.accessToken = data.mapboxKey;
+
+            map = new mapboxgl.Map({
+                container: 'map',
+                style: 'mapbox://styles/mapbox/satellite-v9',
+                center: [30.0, 20.0], 
+                zoom: 2.5,
+                projection: 'globe' 
+            });
+
+            map.on('style.load', () => {
+                map.addSource('mapbox-dem', { 'type': 'raster-dem', 'url': 'mapbox://mapbox.mapbox-terrain-dem-v1', 'tileSize': 512, 'maxzoom': 14 });
+                map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
+                map.setFog({ 'color': 'rgb(10, 10, 20)', 'high-color': 'rgb(30, 30, 50)', 'horizon-blend': 0.1, 'star-intensity': 0.6 });
+            });
+
+            map.on('click', handleMapClick);
+
+            document.addEventListener('mousemove', (e) => {
+                const cursor = document.getElementById('cursor-layer');
+                cursor.style.left = e.clientX + 'px';
+                cursor.style.top = e.clientY + 'px';
+            });
+
+        } catch (err) {
+            console.error("Error connecting to backend:", err);
+            alert("Backend error. Make sure app.py is running!");
+        }
+    }
+
+    // --- CLICK HANDLER ---
+    async function handleMapClick(e) {
         const { lng, lat } = e.lngLat;
         const sidebar = document.getElementById('sidebar');
 
@@ -210,32 +248,13 @@
         let weatherData = { main: { temp: 20, humidity: 50 }, weather: [{ main: 'Clear' }], timezone: 0 };
         
         try {
-            const mapboxUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=country,region&access_token=${MAPBOX_KEY}`;
-            const mbRes = await fetch(mapboxUrl);
-            const mbJson = await mbRes.json();
-            
-            if (mbJson.features && mbJson.features.length > 0) {
-                const countryFeat = mbJson.features.find(f => f.id.startsWith('country'));
-                if (countryFeat) {
-                    geoData.countryName = countryFeat.text;
-                    if (countryFeat.properties && countryFeat.properties.short_code) {
-                        geoData.countryCode = countryFeat.properties.short_code.toUpperCase();
-                    }
-                }
-                const regionFeat = mbJson.features.find(f => f.id.startsWith('region'));
-                if (regionFeat) {
-                    geoData.regionName = regionFeat.text;
-                }
+            const res = await fetch(`/api/scan?lat=${lat}&lng=${lng}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.geo) geoData = data.geo;
+                if (data.weather) weatherData = data.weather;
             }
-        } catch (e) { console.warn("GeoAPI Failed"); }
-
-        try {
-            const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&units=metric&appid=${WEATHER_KEY}`);
-            if (weatherRes.ok) weatherData = await weatherRes.json();
-        } catch (e) { 
-            const absLat = Math.abs(lat);
-            weatherData.main.temp = 30 - (absLat * 0.5) - (elevation / 200);
-        }
+        } catch (e) { console.warn("Backend Scan Failed, using defaults"); }
 
         const temp = Math.round(weatherData.main.temp);
         const humidity = weatherData.main.humidity;
@@ -247,7 +266,6 @@
         let biomeKey = "Plains";
         const countryCode = geoData.countryCode; 
         const regionName = geoData.regionName; 
-        
         const isDeepOcean = !countryCode;
 
         if (isDeepOcean) {
@@ -285,10 +303,9 @@
         document.getElementById('sb-mobs').innerText = data.mobs;
 
         document.getElementById('sb-temp').innerText = temp + "°C";
-
+        
         let safeElev = Math.round(elevation);
         if (safeElev < 0) safeElev = 0; 
-
         document.getElementById('sb-elev').innerText = safeElev + "m";
 
         document.getElementById('sb-hum').innerText = humidity + "%";
@@ -302,14 +319,11 @@
         document.getElementById('sb-precip').innerText = precipText;
 
         sidebar.classList.add('active');
-    });
+    }
+
+    init();
 
     function closeSidebar() { document.getElementById('sidebar').classList.remove('active'); }
-    document.addEventListener('mousemove', (e) => {
-        const cursor = document.getElementById('cursor-layer');
-        cursor.style.left = e.clientX + 'px';
-        cursor.style.top = e.clientY + 'px';
-    });
 </script>
 
 </body>
