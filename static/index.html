@@ -26,7 +26,30 @@
             background-size: contain; background-repeat: no-repeat; background-position: center;
             image-rendering: pixelated; 
         }
+        /* --- PASSPORT / UI UPDATES --- */
+        .passport-container {
+            position: absolute; top: 20px; left: 20px;
+            background: rgba(0, 0, 0, 0.85); border: 2px solid #f1c40f;
+            padding: 15px; color: white; z-index: 10;
+            box-shadow: 0 0 10px #f1c40f;
+            font-family: 'Press Start 2P', cursive;
+        }
+        .passport-title { font-size: 10px; color: #aaa; margin-bottom: 5px; }
+        .passport-score { font-size: 16px; color: #f1c40f; text-shadow: 2px 2px 0 #000; }
 
+        /* ACHIEVEMENT POPUP */
+        .achievement-popup {
+            position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
+            background: linear-gradient(180deg, #2ecc71, #27ae60);
+            border: 4px solid #fff; padding: 20px 40px;
+            color: white; text-align: center; z-index: 99999;
+            box-shadow: 0 10px 0 rgba(0,0,0,0.5);
+            transition: top 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            pointer-events: none;
+        }
+        .achievement-popup.show { top: 50px; }
+        .ach-title { font-size: 12px; color: #e8f5e9; margin-bottom: 10px; }
+        .ach-name { font-size: 20px; font-weight: bold; text-shadow: 3px 3px 0 #000; }
         #sidebar {
             position: absolute; top: 0; right: -550px; width: 500px; height: 100%;
             background: rgba(16, 0, 16, 0.95); border-left: 6px solid #28022e;
@@ -84,6 +107,16 @@
     </style>
 </head>
 <body>
+
+<div class="passport-container">
+    <div class="passport-title">BIOMES DISCOVERED</div>
+    <div class="passport-score" id="score-display">0 / 0</div>
+</div>
+
+<div id="achievement-box" class="achievement-popup">
+    <div class="ach-title">✨ NEW DISCOVERY! ✨</div>
+    <div class="ach-name" id="ach-biome-name">PLAINS</div>
+</div>
 
 <div id="cursor-layer"><div class="crosshair"></div></div>
 <div id="map"></div>
@@ -169,6 +202,33 @@
     };
 
     // --- LOGIC FUNCTIONS ---
+    // --- PASSPORT SYSTEM ---
+    const TOTAL_BIOMES = Object.keys(BIOME_DATA).length;
+    let discoveredBiomes = JSON.parse(localStorage.getItem('myBiomes')) || [];
+
+    function updateScore() {
+        const count = discoveredBiomes.length;
+        document.getElementById('score-display').innerText = `${count} / ${TOTAL_BIOMES}`;
+    }
+    // Run once on load
+    updateScore();
+
+    function triggerAchievement(biomeName) {
+    const popup = document.getElementById('achievement-box');
+    const nameEl = document.getElementById('ach-biome-name');
+    
+    // Play Sound (Optional - create an Audio object if you want)
+    // new Audio('levelup.mp3').play();
+
+    nameEl.innerText = biomeName;
+    popup.classList.add('show');
+
+    // Hide after 3 seconds
+    setTimeout(() => {
+        popup.classList.remove('show');
+    }, 3000);
+}
+
     function getOceanBiome(temp, isDeep) {
         let prefix = isDeep ? "Deep " : "";
         if (temp < -2) return isDeep ? 'Deep Frozen Ocean' : 'Frozen Ocean';
@@ -233,6 +293,7 @@
     }
 
     // --- CLICK HANDLER ---
+    // --- CLICK HANDLER ---
     async function handleMapClick(e) {
         const { lng, lat } = e.lngLat;
         const sidebar = document.getElementById('sidebar');
@@ -250,9 +311,10 @@
         try {
             const res = await fetch(`/api/scan?lat=${lat}&lng=${lng}`);
             if (res.ok) {
-                const data = await res.json();
-                if (data.geo) geoData = data.geo;
-                if (data.weather) weatherData = data.weather;
+                // We use 'apiData' here to avoid naming conflicts
+                const apiData = await res.json();
+                if (apiData.geo) geoData = apiData.geo;
+                if (apiData.weather) weatherData = apiData.weather;
             }
         } catch (e) { console.warn("Backend Scan Failed, using defaults"); }
 
@@ -268,6 +330,7 @@
         const regionName = geoData.regionName; 
         const isDeepOcean = !countryCode;
 
+        // 1. Determine Biome Key
         if (isDeepOcean) {
             if (lat < -60 && elevation > 10) biomeKey = 'Ice Spikes'; 
             else biomeKey = getOceanBiome(temp, isDeepOcean);
@@ -280,9 +343,24 @@
         else if (COUNTRY_MAP[countryCode]) biomeKey = COUNTRY_MAP[countryCode];
         else biomeKey = getBiomeByLat(lat, humidity, elevation); 
 
+        // 2. Validate Biome Key
         if (!BIOME_DATA[biomeKey]) biomeKey = 'Plains';
+        
+        // 3. PASSPORT SYSTEM: Check for Discovery
+        if (!discoveredBiomes.includes(biomeKey)) {
+            // It's new! Save it.
+            discoveredBiomes.push(biomeKey);
+            localStorage.setItem('myBiomes', JSON.stringify(discoveredBiomes));
+            
+            // Trigger the "Level Up" event
+            updateScore();
+            triggerAchievement(biomeKey.toUpperCase());
+        }
+
+        // 4. Get Data for UI (Declared ONLY ONCE now)
         const data = BIOME_DATA[biomeKey];
 
+        // 5. Render UI
         let displayName = geoData.countryName || "Deep Ocean";
         if (lat < -60 && elevation > 10) displayName = "Antarctica";
 
