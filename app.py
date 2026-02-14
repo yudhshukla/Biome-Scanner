@@ -44,22 +44,24 @@ def scan():
     try:
         mapbox_key = os.getenv('MAPBOX_KEY')
         geo_url = f"https://api.mapbox.com/geocoding/v5/mapbox.places/{lng},{lat}.json?types=country,region&access_token={mapbox_key}"
-        geo_res = requests.get(geo_url)
         
-        if geo_res.status_code == 200:
-            features = geo_res.json().get('features', [])
-            
-            # Extract Country
-            country = next((f for f in features if f['id'].startswith('country')), None)
-            if country:
-                geo_data['countryName'] = country.get('text')
-                if 'short_code' in country.get('properties', {}):
-                    geo_data['countryCode'] = country['properties']['short_code'].upper()
-            
-            # Extract Region
-            region = next((f for f in features if f['id'].startswith('region')), None)
-            if region:
-                geo_data['regionName'] = region.get('text')
+        # --- NEW CODE: Send the 'Referer' header ---
+        # Replace 'https://your-app.onrender.com/' with your ACTUAL Render URL
+        headers = {"Referer": "https://your-app-name.onrender.com/"} 
+        geo_res = requests.get(geo_url, headers=headers)
+        # -------------------------------------------
+        
+        # Extract Country
+        country = next((f for f in features if f['id'].startswith('country')), None)
+        if country:
+            geo_data['countryName'] = country.get('text')
+            if 'short_code' in country.get('properties', {}):
+                geo_data['countryCode'] = country['properties']['short_code'].upper()
+        
+        # Extract Region
+        region = next((f for f in features if f['id'].startswith('region')), None)
+        if region:
+            geo_data['regionName'] = region.get('text')
 
     except Exception as e:
         print(f"Geo API Error: {e}")
