@@ -260,7 +260,7 @@
     // --- INIT ---
     async function init() {
         try {
-            const res = await fetch('https://minecraft-biome-scanner.onrender.com/');
+            const res = await fetch('https://minecraft-biome-scanner.onrender.com/api/config');
             const data = await res.json();
             mapboxgl.accessToken = data.mapboxKey;
 
@@ -309,7 +309,7 @@
         let weatherData = { main: { temp: 20, humidity: 50 }, weather: [{ main: 'Clear' }], timezone: 0 };
         
         try {
-            const res = await fetch('https://minecraft-biome-scanner.onrender.com/api/scan?lat=${lat}&lng=${lng}');
+            const res = await fetch(`https://minecraft-biome-scanner.onrender.com/api/scan?lat=${lat}&lng=${lng}`);
             if (res.ok) {
                 // We use 'apiData' here to avoid naming conflicts
                 const apiData = await res.json();
