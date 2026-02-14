@@ -49,7 +49,7 @@ def scan():
         headers = {"Referer": "https://minecraft-biome-scanner.onrender.com/"} 
         geo_res = requests.get(geo_url, headers=headers)
         # -------------------------------------------
-        
+        features = geo_res.json().get('features', [])
         # Extract Country
         country = next((f for f in features if f['id'].startswith('country')), None)
         if country:
