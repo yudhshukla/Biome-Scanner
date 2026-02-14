@@ -46,8 +46,7 @@ def scan():
         geo_url = f"https://api.mapbox.com/geocoding/v5/mapbox.places/{lng},{lat}.json?types=country,region&access_token={mapbox_key}"
         
         # --- NEW CODE: Send the 'Referer' header ---
-        # Replace 'https://your-app.onrender.com/' with your ACTUAL Render URL
-        headers = {"Referer": "https://your-app-name.onrender.com/"} 
+        headers = {"Referer": "https://minecraft-biome-scanner.onrender.com/"} 
         geo_res = requests.get(geo_url, headers=headers)
         # -------------------------------------------
         
