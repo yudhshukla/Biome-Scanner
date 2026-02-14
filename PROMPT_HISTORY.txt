@@ -27,23 +27,3 @@ Why does every country show up as ocean now?
 Okay, so it looks like we have a ton of biomes in our list, but we are not applying all of them. Without disrupting the robust biome classification system, can we apply more of the biomes we have? Dont add any new biomes to our list-- I found images already. Assume that the images are in the format of images/deeplukewarmocean.png, no spaces all lowercase title. Please replace the image with that, and apply more biomes if possible (dont add any, just classify)
 
 How come all of the ocean elevations are -24m?
-
-I want to build a backend for this website. Currently, everything is in index.html. I want to use Render to host it. What should be my first step?
-
-I would like to use Python for the backend
-
-Before in index.html, I was using config.js to get the keys but now we switched to .env. How do I show that change in index.html and anywhere else?
-
-const res = await fetch('/api/config'); What is this line doing?
-
-Each column of the weather/time statistic is a different size. Can u make it uniform?
-
-The images dont work, but index.html and images are in the same folder, static. What is the issue?
-
-I'm using render, and I got a URL. But only the weather api seems to be working. There is no globe or country detection. How do I debug this?
-
-I created a new key on mapbox and made only render allowed to use it, and now I see the globe. However, it thinks everything I click on is the ocean biome. No countries are appearing.
-
-Now, im wondering what feature can I add to my biome scanner to make it more interactive and cooler? I dont want to add small superficial things, but maybe one big cool thing. Brainstorm some options.
-
-How do I start with adding a game system that tracks new biomes visited?
