@@ -313,6 +313,16 @@
     async function handleMapClick(e) {
         const { lng, lat } = e.lngLat;
         const sidebar = document.getElementById('sidebar');
+        const svService = new google.maps.StreetViewService();
+
+        svService.getPanorama({ location: { lat: lat, lng: lng }, radius: 50 }, (data, status) => {
+            if (status === google.maps.StreetViewService.OK) {
+                console.log("STREET VIEW FOUND!");
+            }
+            else {
+                console.log("No Street View available at this location.");
+            }
+        });
 
         if (steveMarker) steveMarker.remove();
         const el = document.createElement('div');
