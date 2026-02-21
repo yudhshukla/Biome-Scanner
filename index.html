@@ -6,7 +6,7 @@
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet">
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
-    
+
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@700&display=swap" rel="stylesheet">
     
@@ -150,6 +150,12 @@
         <div class="mob-title">LIKELY MOBS</div>
         <div class="mobs" id="sb-mobs">--</div>
     </div>
+
+    <div id="game-modal" class="hidden">
+        <div class="guess-button"></div>
+        </div>
+
+    </div>
 </div>
 
 <script>
@@ -263,6 +269,16 @@
             const res = await fetch('https://minecraft-biome-scanner.onrender.com/api/config');
             const data = await res.json();
             mapboxgl.accessToken = data.mapboxKey;
+            // Google Maps requires API keys to be built directly into the URL of the script tag
+            // So, create an empty script element 
+            const googleScript = document.createElement('script');
+            
+            // Inject the API key into the URL
+            googleScript.src = `https://maps.googleapis.com/maps/api/js?key=${data.googleKey}`;
+            googleScript.async = true; // Load asynchronously 
+            
+            // Inject the script into <head> to start loading Google Maps API
+            document.head.appendChild(googleScript);
 
             map = new mapboxgl.Map({
                 container: 'map',
