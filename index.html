@@ -161,6 +161,7 @@
 <script>
     let map;
     let steveMarker = null;
+    let svService = null;
 
     // --- BIOME DATA ---
     const BIOME_DATA = {
@@ -280,6 +281,12 @@
             // Inject the script into <head> to start loading Google Maps API
             document.head.appendChild(googleScript);
 
+            googleScript.onload = () => {
+                // Now it is safe to create the service
+                svService = new google.maps.StreetViewService();
+                console.log("Google Maps loaded successfully!");
+            };
+
             map = new mapboxgl.Map({
                 container: 'map',
                 style: 'mapbox://styles/mapbox/satellite-v9',
@@ -313,16 +320,19 @@
     async function handleMapClick(e) {
         const { lng, lat } = e.lngLat;
         const sidebar = document.getElementById('sidebar');
-        const svService = new google.maps.StreetViewService();
 
-        svService.getPanorama({ location: { lat: lat, lng: lng }, radius: 50 }, (data, status) => {
-            if (status === google.maps.StreetViewService.OK) {
-                console.log("STREET VIEW FOUND!");
-            }
-            else {
-                console.log("No Street View available at this location.");
-            }
-        });
+        // Check if the service exists before trying to access attributes 
+        if (svService) {
+            svService.getPanorama({ location: { lat: lat, lng: lng }, radius: 50 }, (data, status) => {
+                if (status === "OK") { //if it exists, and there is a street view where we clicked
+                    console.log("STREET VIEW FOUND at:", data.location.latLng.toString());
+                } else {
+                    console.log("No Street View available here.");
+                }
+            });
+        } else {
+            console.warn("Google Maps is still loading...");
+        }
 
         if (steveMarker) steveMarker.remove();
         const el = document.createElement('div');
