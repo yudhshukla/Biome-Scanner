@@ -110,18 +110,53 @@
             left: 0; 
             width: 100%; 
             height: 100%;
+            /* Cover the whole screen */
+
             background: rgba(0, 0, 0, 0.95); 
             z-index: 100000; 
             display: none; 
             text-align: center; 
             color: white;
         }
-        #street-view-container {
+        .street-view-container {
             width: 80%;
             height: 60%;
             margin: 50px auto;
-            border: 4px solid #555;
+            border: 4px solid #f1c40f;
         }
+
+        .guess-buttons { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); /* Modeled off stat-grid to create 2 equal columns */
+            gap: 15px; 
+            width: 80%;
+            margin: 20px auto 0 auto; 
+        }
+
+        .guess-btn {
+            /* Styles modeled off stat-box */
+            background: rgba(255, 255, 255, 0.08); 
+            border: 3px solid #333; 
+            
+            color: #fff; 
+            font-family: 'Press Start 2P', cursive;
+            font-size: 11px; 
+            line-height: 1.5;
+            text-shadow: 2px 2px 0 #000; 
+            
+            padding: 15px; 
+            height: 70px;
+            box-sizing: border-box; 
+            
+            transition: all 0.2s; /* Makes animations smooth */
+        }
+
+        .guess-btn:hover {
+            background: rgba(255, 255, 255, 0.2); 
+            border-color: #f1c40f; 
+            transform: scale(1.05); /* Make the button pop out slightly when hovering */
+        }
+
     </style>
 </head>
 <body>
@@ -132,7 +167,7 @@
 </div>
 
 <div id="achievement-box" class="achievement-popup">
-    <div class="ach-title">✨ NEW DISCOVERY! ✨</div>
+    <div class="ach-title"> NEW DISCOVERY! </div>
     <div class="ach-name" id="ach-biome-name">PLAINS</div>
 </div>
 
@@ -142,8 +177,9 @@
 
 <div id="game-modal" class="hidden">
     <h2>GUESS THE BIOME!</h2>
-    <div id="street-view-container"></div>
-    <div id="guess buttons">
+    <div id="street-view-container"></div> <!-- Frame to paint street view -->
+    <div id="guess-buttons">
+        <!-- When clicked, call makeGuess with the text on the button-->
         <button id="btn-0" class="guess-btn" onclick="makeGuess(this.innerText)"></button>
         <button id="btn-1" class="guess-btn" onclick="makeGuess(this.innerText)"></button>
         <button id="btn-2" class="guess-btn" onclick="makeGuess(this.innerText)"></button>
@@ -451,7 +487,7 @@
                     document.getElementById('game-modal').style.display = 'block'; // Unhide the modal
                     // Image should be painted in the street view container, and it should paint the coords we clicked on 
                     new google.maps.StreetViewPanorama(document.getElementById('street-view-container'),{
-                        position: data.location.latLng
+                        position: data.location.latLng // The data we get back is a dictionary with a 'location' key, which has a 'latLng' key, which is the coordinates of the street view panorama
                     });
                     
                     // Populate array with the correct answer and 3 random wrong answers
@@ -494,7 +530,7 @@
         if (guess === currentCorrectBiome) {
             alert("You guessed the biome!!!");
         } else {
-            alert(`The correct biome was ${currentCorrectBiome}`);
+            alert(`The correct biome was '${currentCorrectBiome}'`);
         }
         document.getElementById('game-modal').style.display = 'none'; // Hide the modal after guessing
         document.getElementById('sidebar').classList.add('active'); // Open the sidebar with the biome info when the game modal closes
