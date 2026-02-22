@@ -104,6 +104,20 @@
         .mob-title { font-size: 12px; color: #aaa; margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 6px; letter-spacing: 1px;}
         .mobs { font-size: 16px; color: #2ecc71; line-height: 1.8; text-shadow: 1px 1px 0 #000; }
         
+        /* Street view modal */
+        #game-modal {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+
+        #street-view-container {
+            width: 80%;
+            height: 60%;
+            margin: 50px auto;
+            border: 4px solid #555;
+        }
     </style>
 </head>
 <body>
@@ -152,9 +166,13 @@
     </div>
 
     <div id="game-modal" class="hidden">
+        <h2>GUESS THE BIOME!</h2>
+        <div id="street-view-container"></div>
         <div class="guess-button"></div>
-        </div>
-
+        <div class="guess-button"></div>
+        <div class="guess-button"></div>
+        <div class="guess-button"></div>
+        
     </div>
 </div>
 
@@ -321,19 +339,6 @@
         const { lng, lat } = e.lngLat;
         const sidebar = document.getElementById('sidebar');
 
-        // Check if the service exists before trying to access attributes 
-        if (svService) {
-            svService.getPanorama({ location: { lat: lat, lng: lng }, radius: 50 }, (data, status) => {
-                if (status === "OK") { //if it exists, and there is a street view where we clicked
-                    console.log("STREET VIEW FOUND at:", data.location.latLng.toString());
-                } else {
-                    console.log("No Street View available here.");
-                }
-            });
-        } else {
-            console.warn("Google Maps is still loading...");
-        }
-
         if (steveMarker) steveMarker.remove();
         const el = document.createElement('div');
         el.className = 'steve-marker';
@@ -432,7 +437,25 @@
         if (weatherMain === "Thunderstorm") precipText = "STORM ⛈️";
         document.getElementById('sb-precip').innerText = precipText;
 
-        sidebar.classList.add('active');
+        // Check if the google maps service exists before trying to access attributes 
+        if (svService) {
+            svService.getPanorama({ location: { lat: lat, lng: lng }, radius: 50 }, (data, status) => {
+                if (status === "OK") { //if it exists, and there is a street view where we clicked
+                    document.getElementById('game-modal').style.display = 'block'; // Unhide the modal
+                    // Image should be painted in the street view container, and it should paint the coords we clicked on 
+                    new google.maps.StreetViewPanorama(document.getElementById('street-view-container'),{
+                        position: data.location.latLng
+                    });
+                    console.log("STREET VIEW FOUND at:", data.location.latLng.toString());
+                } else {
+                    sidebar.classList.add('active');
+                    console.log("No Street View available here.");
+                }
+            });
+        } else {
+            sidebar.classList.add('active');
+            console.warn("Google Maps is still loading...");
+        }
     }
 
     init();
