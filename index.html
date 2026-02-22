@@ -103,15 +103,19 @@
         .mob-list { margin-bottom: 20px; }
         .mob-title { font-size: 12px; color: #aaa; margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 6px; letter-spacing: 1px;}
         .mobs { font-size: 16px; color: #2ecc71; line-height: 1.8; text-shadow: 1px 1px 0 #000; }
-        
-        /* Street view modal */
-        #game-modal {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            display: none;
-        }
 
+        #game-modal {
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95); 
+            z-index: 100000; 
+            display: none; 
+            text-align: center; 
+            color: white;
+        }
         #street-view-container {
             width: 80%;
             height: 60%;
@@ -134,6 +138,19 @@
 
 <div id="cursor-layer"><div class="crosshair"></div></div>
 <div id="map"></div>
+
+
+<div id="game-modal" class="hidden">
+    <h2>GUESS THE BIOME!</h2>
+    <div id="street-view-container"></div>
+    <div id="guess buttons">
+        <button id="btn-0" class="guess-btn" onclick="makeGuess(this.innerText)"></button>
+        <button id="btn-1" class="guess-btn" onclick="makeGuess(this.innerText)"></button>
+        <button id="btn-2" class="guess-btn" onclick="makeGuess(this.innerText)"></button>
+        <button id="btn-3" class="guess-btn" onclick="makeGuess(this.innerText)"></button>
+    </div>
+    
+</div>
 
 <div id="sidebar">
     <div class="close-btn" onclick="closeSidebar()">[X]</div>
@@ -163,18 +180,6 @@
     <div class="mob-list">
         <div class="mob-title">LIKELY MOBS</div>
         <div class="mobs" id="sb-mobs">--</div>
-    </div>
-
-    <div id="game-modal" class="hidden">
-        <h2>GUESS THE BIOME!</h2>
-        <div id="street-view-container"></div>
-        <div id="guess buttons">
-            <button id="btn-0" class="guess-btn" onclick="makeGuess(this.innerText)"></button>
-            <button id="btn-1" class="guess-btn" onclick="makeGuess(this.innerText)"></button>
-            <button id="btn-2" class="guess-btn" onclick="makeGuess(this.innerText)"></button>
-            <button id="btn-3" class="guess-btn" onclick="makeGuess(this.innerText)"></button>
-        </div>
-        
     </div>
 </div>
 
