@@ -168,10 +168,12 @@
     <div id="game-modal" class="hidden">
         <h2>GUESS THE BIOME!</h2>
         <div id="street-view-container"></div>
-        <div class="guess-button"></div>
-        <div class="guess-button"></div>
-        <div class="guess-button"></div>
-        <div class="guess-button"></div>
+        <div id="guess buttons">
+            <button id="btn-0" class="guess-btn" onclick="makeGuess(this.innerText)"></button>
+            <button id="btn-1" class="guess-btn" onclick="makeGuess(this.innerText)"></button>
+            <button id="btn-2" class="guess-btn" onclick="makeGuess(this.innerText)"></button>
+            <button id="btn-3" class="guess-btn" onclick="makeGuess(this.innerText)"></button>
+        </div>
         
     </div>
 </div>
@@ -180,6 +182,7 @@
     let map;
     let steveMarker = null;
     let svService = null;
+    let currentCorrectBiome = null;
 
     // --- BIOME DATA ---
     const BIOME_DATA = {
@@ -208,15 +211,14 @@
         'Stony Peaks': { chinese: '石峰 Shífēng', image: 'images/stonypeaks.png', mobs: 'Goats' },
         
         // OCEAN VARIANTS
-        'Ocean': { chinese: '海洋 Hǎiyáng', image: 'images/ocean.png', mobs: 'Squid, Dolphins' },
         'Deep Ocean': { chinese: '深海 Shēnhǎi', image: 'images/deepocean.png', mobs: 'Guardians' },
-        'Frozen Ocean': { chinese: '冻洋 Dòng Yáng', image: 'images/frozenocean.png', mobs: 'Polar Bears' },
+       // 'Frozen Ocean': { chinese: '冻洋 Dòng Yáng', image: 'images/frozenocean.png', mobs: 'Polar Bears' },
         'Deep Frozen Ocean': { chinese: '深冻洋 Shēn Dòngyáng', image: 'images/deepfrozenocean.png', mobs: 'Polar Bears' },
-        'Cold Ocean': { chinese: '冷水海洋 Lěngshuǐ Hǎiyáng', image: 'images/coldocean.png', mobs: 'Salmon, Dolphins' },
+       // 'Cold Ocean': { chinese: '冷水海洋 Lěngshuǐ Hǎiyáng', image: 'images/coldocean.png', mobs: 'Salmon, Dolphins' },
         'Deep Cold Ocean': { chinese: '深冷水海洋 Shēn Lěngshuǐ Hǎiyáng', image: 'images/coldocean.png', mobs: 'Salmon' },
-        'Lukewarm Ocean': { chinese: '温水海洋 Wēnshu Hǎiyáng', image: 'images/lukewarmocean.png', mobs: 'Pufferfish' },
+      //  'Lukewarm Ocean': { chinese: '温水海洋 Wēnshu Hǎiyáng', image: 'images/lukewarmocean.png', mobs: 'Pufferfish' },
         'Deep Lukewarm Ocean': { chinese: '深温水海洋 Shēn Wēnshuǐ Hǎiyáng', image: 'images/deeplukewarmocean.png', mobs: 'Pufferfish' },
-        'Warm Ocean': { chinese: '暖水海洋 Nuǎnshuǐ Hǎiyáng', image: 'images/warmocean.png', mobs: 'Tropical Fish' }
+      //  'Warm Ocean': { chinese: '暖水海洋 Nuǎnshuǐ Hǎiyáng', image: 'images/warmocean.png', mobs: 'Tropical Fish' }
     };
 
     const REGION_MAP = {
@@ -446,6 +448,27 @@
                     new google.maps.StreetViewPanorama(document.getElementById('street-view-container'),{
                         position: data.location.latLng
                     });
+                    
+                    // Populate array with the correct answer and 3 random wrong answers
+                    currentCorrectBiome = biomeKey;
+                    let options = [biomeKey];
+                    while (options.length < 4) {
+                        const randIndex = Math.floor(Math.random() * Object.keys(BIOME_DATA).length); // Choose random biome
+                        const randBiome = Object.keys(BIOME_DATA)[randIndex];
+                        if (!options.includes(randBiome)) { // Don't add the biome if it's already in options
+                            options.push(randBiome);
+                        }
+                    }
+                    // Found online trick to shuffle array
+                    options.sort(() => Math.random() - 0.5);
+
+                    // Write options to buttons
+                    for (let i = 0; i < 4; i ++){
+                        const btn = document.getElementById(`btn-${i}`);
+                        btn.innerText = options[i];
+                        btn.style.display = 'inline-block'; // Make buttons visible
+                    }
+                    
                     console.log("STREET VIEW FOUND at:", data.location.latLng.toString());
                 } else {
                     sidebar.classList.add('active');
@@ -461,6 +484,16 @@
     init();
 
     function closeSidebar() { document.getElementById('sidebar').classList.remove('active'); }
+
+    function makeGuess(guess) {
+        if (guess === currentCorrectBiome) {
+            alert("You guessed the biome!!!");
+        } else {
+            alert(`The correct biome was ${currentCorrectBiome}`);
+        }
+        document.getElementById('game-modal').style.display = 'none'; // Hide the modal after guessing
+        document.getElementById('sidebar').classList.add('active'); // Open the sidebar with the biome info when the game modal closes
+    }
 </script>
 
 </body>
