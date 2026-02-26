@@ -163,8 +163,13 @@
 
 <div class="passport-container">
     <div class="passport-title">BIOMES DISCOVERED</div>
-    <div class="passport-score" id="score-display">0 / 0</div>
+    <div class="passport-score" id="biome-score-display">0 / 0</div>
 </div>
+
+<div class="score">
+    <div class="score-label">SCORE </div>
+    <div class="score-value" id="score-display">0</div>
+</div>"
 
 <div id="achievement-box" class="achievement-popup">
     <div class="ach-title"> NEW DISCOVERY! </div>
@@ -224,6 +229,8 @@
     let steveMarker = null;
     let svService = null;
     let currentCorrectBiome = null;
+    let gameScore = 0;
+    let streak = 1;
 
     // --- BIOME DATA ---
     const BIOME_DATA = {
@@ -276,7 +283,7 @@
 
     function updateScore() {
         const count = discoveredBiomes.length;
-        document.getElementById('score-display').innerText = `${count} / ${TOTAL_BIOMES}`;
+        document.getElementById('biome-score-display').innerText = `${count} / ${TOTAL_BIOMES}`;
     }
     // Run once on load
     updateScore();
@@ -379,6 +386,8 @@
     // --- CLICK HANDLER ---
     // --- CLICK HANDLER ---
     async function handleMapClick(e) {
+        closeSidebar(); 
+
         const { lng, lat } = e.lngLat;
         const sidebar = document.getElementById('sidebar');
 
@@ -529,8 +538,12 @@
     function makeGuess(guess) {
         if (guess === currentCorrectBiome) {
             alert("You guessed the biome!!!");
+            gameScore += 100 * (streak * 1.25) * (discoveredBiomes.includes(currentCorrectBiome) ? 1 : 2); // More points for new biomes with a streak multiplier
+            document.getElementById('score-display').innerText = gameScore;
+            streak += 1;
         } else {
             alert(`The correct biome was '${currentCorrectBiome}'`);
+            streak = 1;
         }
         document.getElementById('game-modal').style.display = 'none'; // Hide the modal after guessing
         document.getElementById('sidebar').classList.add('active'); // Open the sidebar with the biome info when the game modal closes
