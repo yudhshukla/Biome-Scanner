@@ -35,13 +35,13 @@
             font-family: 'Press Start 2P', cursive;
         }
         .passport-title { font-size: 10px; color: #aaa; margin-bottom: 5px; }
-        .passport-score { font-size: 16px; color: #f1c40f; text-shadow: 2px 2px 0 #000; }
+        .passport-score { font-size: 24px; color: #f1c40f; text-shadow: 2px 2px 0 #000; }
         
         /* --- Scoreboard --- */
         .score {
             position: absolute; 
             top: 20px; 
-            right: 20px; 
+            left: 250px; 
             
             background: rgba(0, 0, 0, 0.85); 
             border: 2px solid #f1c40f; 
@@ -67,9 +67,8 @@
 
         .lives {
             position: absolute;
-            right : 100px;
-            top: 20px;
-            margin-top: 10px;
+            left : -230px;
+            top: 100px;
             display: flex;
             justify-content: center;
             gap: 5px;
@@ -93,6 +92,16 @@
         .achievement-popup.show { top: 50px; }
         .ach-title { font-size: 12px; color: #e8f5e9; margin-bottom: 10px; }
         .ach-name { font-size: 20px; font-weight: bold; text-shadow: 3px 3px 0 #000; }
+
+        #result-popup {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(20, 20, 20, 0.95); border: 4px solid #fff;
+            padding: 30px; text-align: center; color: white; z-index: 200000;
+            box-shadow: 0 0 20px #000; width: 300px;
+        }
+        #result-popup.hidden { display: none; }
+        #result-title { margin-bottom: 15px; }
+
         #sidebar {
             position: absolute; top: 0; right: -550px; width: 500px; height: 100%;
             background: rgba(16, 0, 16, 0.95); border-left: 6px solid #28022e;
@@ -168,6 +177,13 @@
             border: 4px solid #f1c40f;
         }
 
+        #timer-display {
+            font-size: 24px;
+            color: #ff5555; 
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 0 #000;
+        }
+
         #guess-buttons { 
             display: grid; 
             grid-template-columns: repeat(2, 1fr); /* Modeled off stat-grid to create 2 equal columns */
@@ -224,6 +240,12 @@
     <div class="ach-name" id="ach-biome-name">PLAINS</div>
 </div>
 
+<div id="result-popup" class="hidden">
+    <h2 id="result-title">CORRECT!</h2>
+    <p id="result-message">You found the Plains biome!</p>
+    
+    <button id="continue-btn" class="guess-btn" onclick="continueGame()" style="display: none; margin-top: 15px;">NEW ROUND</button>
+</div>
 
 <div id="cursor-layer"><div class="crosshair"></div></div>
 <div id="map"></div>
@@ -231,6 +253,7 @@
 
 <div id="game-modal" class="hidden">
     <h2>GUESS THE BIOME!</h2>
+    <div id="timer-display">15</div>
     <div id="street-view-container"></div> <!-- Frame to paint street view -->
     <div id="guess-buttons">
         <!-- When clicked, call makeGuess with the text on the button-->
@@ -281,6 +304,8 @@
     let gameScore = 0;
     let streak = 1;
     let lives = 3;
+    let countdownTimer; 
+    let timeLeft = 15; 
 
     // --- BIOME DATA ---
     const BIOME_DATA = {
@@ -341,9 +366,6 @@
     function triggerAchievement(biomeName) {
     const popup = document.getElementById('achievement-box');
     const nameEl = document.getElementById('ach-biome-name');
-    
-    // Play Sound (Optional - create an Audio object if you want)
-    // new Audio('levelup.mp3').play();
 
     nameEl.innerText = biomeName;
     popup.classList.add('show');
@@ -353,6 +375,34 @@
         popup.classList.remove('show');
     }, 3000);
 }
+
+function showPopup(title, message, isGameOver) {
+    const popup = document.getElementById('result-popup');
+    const titleEl = document.getElementById('result-title');
+    const messageEl = document.getElementById('result-message');
+    const btnEl = document.getElementById('continue-btn');
+
+    // Update the text to whatever we passed in
+    titleEl.innerText = title;
+    messageEl.innerText = message;
+
+    popup.classList.remove('hidden');
+
+    // Determine if popup will be game over or correct/incorrect
+    if (isGameOver) {
+        btnEl.style.display = 'inline-block'; 
+    } else {
+        btnEl.style.display = 'none'; 
+        setTimeout(() => {
+            popup.classList.add('hidden');
+        }, 3000);
+    }
+}
+
+function continueGame() {
+    document.getElementById('result-popup').classList.add('hidden');
+}
+
 
     function getOceanBiome(temp, isDeep) {
         let prefix = isDeep ? "Deep " : "";
@@ -569,6 +619,18 @@
                         btn.style.display = 'inline-block'; // Make buttons visible
                     }
                     
+                    // Countdown timer when guessing 
+                    timeLeft = 15;
+                    countdownTimer = setInterval(() => {
+                        timeLeft -= 1;
+                        document.getElementById('timer-display').innerText = `${timeLeft}`;
+
+                        if (timeLeft <= 0) {
+                            clearInterval(countdownTimer); // Stop the loop
+                            makeGuess("TIME_OUT"); // Force a wrong guess
+                        }
+                    }, 1000); 
+
                     console.log("STREET VIEW FOUND at:", data.location.latLng.toString());
                 } else {
                     sidebar.classList.add('active');
@@ -585,33 +647,42 @@
 
     function closeSidebar() { document.getElementById('sidebar').classList.remove('active'); }
 
-    function makeGuess(guess) {
-        if (guess === currentCorrectBiome) {
-            alert("You guessed the biome!!!");
-            gameScore += 100 * (streak * 1.25) * (discoveredBiomes.includes(currentCorrectBiome) ? 1 : 2); // More points for new biomes with a streak multiplier
+ function makeGuess(guess) {
+    clearInterval(countdownTimer); // Stop the countdown when a guess is made
+    
+    if (guess === currentCorrectBiome) {
+        // Correct guess popup
+        showPopup("CORRECT!", `You found the ${currentCorrectBiome}! biome`, false);
+        
+        // Score based on streak and if biome was already discovered (new biomes are worth more)
+        gameScore += 100 * (streak * 1.25) * (discoveredBiomes.includes(currentCorrectBiome) ? 1 : 2);
+        document.getElementById('score-display').innerText = gameScore;
+        streak += 1;
+    } else {
+        streak = 1;
+        lives -= 1;
+        document.getElementById('heart' + (lives + 1)).style.display = 'none'; // Hide heart
+
+        if (lives <= 0) {
+            // Game over popup, requires click
+            showPopup("GAME OVER", `The correct biome was ${currentCorrectBiome}. You ran out of lives!`, true);
+            
+            gameScore = 0;
             document.getElementById('score-display').innerText = gameScore;
-            streak += 1;
-        } else {
-            alert(`The correct biome was '${currentCorrectBiome}'`);
-            streak = 1;
-            lives -= 1;
-            document.getElementById('heart' + (lives + 1)).style.display = 'none'; // Hide one heart when life is lost
-
-            if (lives == 0) {
-                alert("Game Over!");
-                gameScore = 0;
-                document.getElementById('score-display').innerText = gameScore;
-                lives = 3;
-                // Reset heart display
-                for (let i = 1; i <= 3; i++) {
-                    document.getElementById('heart' + i).style.display = 'inline-block';
-                }
+            // Reset lives for next round
+            lives = 3;
+            for (let i = 1; i <= 3; i++) {
+                document.getElementById('heart' + i).style.display = 'inline-block';
             }
-
+        } else {
+            // Incorrect guess popup
+            showPopup("INCORRECT", `The correct biome was ${currentCorrectBiome}.`, false);
         }
-        document.getElementById('game-modal').style.display = 'none'; // Hide the modal after guessing
-        document.getElementById('sidebar').classList.add('active'); // Open the sidebar with the biome info when the game modal closes
     }
+    
+    document.getElementById('game-modal').style.display = 'none'; 
+    document.getElementById('sidebar').classList.add('active');
+}
 </script>
 
 </body>
