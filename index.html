@@ -170,6 +170,24 @@
             text-align: center; 
             color: white;
         }
+
+        #game-modal .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 28px;
+            color: #ff5555;
+            cursor: pointer;
+            z-index: 200000;
+            text-shadow: 2px 2px 0 #000;
+            transition: all 0.2s;
+        }
+
+        #game-modal .close-btn:hover {
+            color: #fff; 
+            transform: scale(1.2); 
+        }
+
         #street-view-container {
             width: 80%;
             height: 60%;
@@ -276,6 +294,7 @@
 
 <div id="game-modal" class="hidden">
     <h2>GUESS THE BIOME!</h2>
+    <div class="close-btn" onclick="quitGame()">[X]</div>
     <div id="timer-display">15</div>
     <div id="street-view-container"></div> <!-- Frame to paint street view -->
     <div id="guess-buttons">
@@ -453,6 +472,12 @@ function continueGame() {
             return 'Jungle';
         }
         return 'Plains';
+    }
+
+    function quitGame() {
+        clearInterval(countdownTimer);
+        document.getElementById('game-modal').style.display = 'none';
+        streak = 1; 
     }
 
     // --- INIT ---
@@ -641,6 +666,7 @@ function continueGame() {
                         btn.style.display = 'inline-block'; // Make buttons visible
                     }
                     
+                    clearInterval(countdownTimer);
                     // Countdown timer when guessing 
                     timeLeft = 15;
                     countdownTimer = setInterval(() => {
@@ -669,33 +695,51 @@ function continueGame() {
         closeSidebar(); 
 
         try {
-            // Ask backend for a random coordinate from the database
-            const res = await fetch('http://127.0.0.1:3000/api/random-drop'); 
+            // Fetch coordinate from list in backend
+            const res = await fetch('https://minecraft-biome-scanner.onrender.com/api/random-drop');
             const location = await res.json();
 
             if (location.lat && location.lng) {
-                console.log("Dropping at:", location.description);
+                console.log("Scouting location:", location.lat, location.lng);
 
-                // Make the Mapbox camera go to the coordinate
-                map.flyTo({
-                    center: [location.lng, location.lat],
-                    zoom: 12, 
-                    speed: 1.2, 
-                    curve: 1.5 
-                });
-
-                // When the camera is done moving,
-                map.once('moveend', () => {
-                    // Fake a mouse click by creating an object that looks like what the map normally sends to handleMapClick
-                    const fakeEvent = {
-                        lngLat: {
-                            lat: location.lat,
-                            lng: location.lng
-                        }
-                    };
+                // Before going there, double check there is a streetview there
+                svService.getPanorama({ 
+                    location: { lat: location.lat, lng: location.lng }, 
+                    radius: 50,
+                    source: google.maps.StreetViewSource.OUTDOOR 
+                }, (data, status) => {
                     
-                    // Start the game with the created object
-                    handleMapClick(fakeEvent);
+                    if (status === "OK") {
+                        // If so, start flying there
+                        console.log("Street View verified! Initiating flight...");
+                        
+                        const currentCenter = map.getCenter();
+                        const distanceLat = Math.abs(currentCenter.lat - location.lat);
+                        const distanceLng = Math.abs(currentCenter.lng - location.lng);
+                        const fakeEvent = { lngLat: { lat: location.lat, lng: location.lng } };
+
+                        if (distanceLat < 0.01 && distanceLng < 0.01) {
+                            handleMapClick(fakeEvent); // Do not fly if we're already there
+                        } else {
+                            
+                            map.flyTo({
+                                center: [location.lng, location.lat],
+                                zoom: 12, 
+                                speed: 1.2, 
+                                curve: 1.5 
+                            });
+
+                            map.once('moveend', () => {
+                                handleMapClick(fakeEvent);
+                            });
+                        }
+                    } else {
+                        // Retry if no streetview exists
+                        console.log(" No Street View found. Rerolling immediately...");
+                        
+                        // Call this function again to draw a new coordinate with a streeview. This will terminate since there is at least one valid coordinate
+                        triggerRandomDrop(); 
+                    }
                 });
             }
         } catch (err) {
