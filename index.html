@@ -65,6 +65,21 @@
             text-shadow: 2px 2px 0 #000;
         }
 
+        .lives {
+            position: absolute;
+            right : 20px;
+            top: 100px;
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .lives img {
+            width: 25px; 
+            height: 25px; 
+        }
+
         /* ACHIEVEMENT POPUP */
         .achievement-popup {
             position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
@@ -197,12 +212,18 @@
 <div class="score">
     <div class="score-label">SCORE </div>
     <div class="score-value" id="score-display">0</div>
-</div>"
+    <div class="lives">
+        <div id = "heart1"><img src="images/heart.png"></div>
+        <div id = "heart2"><img src="images/heart.png"></div>
+        <div id = "heart3"><img src="images/heart.png"></div>
+    </div>
+</div>
 
 <div id="achievement-box" class="achievement-popup">
     <div class="ach-title"> NEW DISCOVERY! </div>
     <div class="ach-name" id="ach-biome-name">PLAINS</div>
 </div>
+
 
 <div id="cursor-layer"><div class="crosshair"></div></div>
 <div id="map"></div>
@@ -259,6 +280,7 @@
     let currentCorrectBiome = null;
     let gameScore = 0;
     let streak = 1;
+    let lives = 3;
 
     // --- BIOME DATA ---
     const BIOME_DATA = {
@@ -572,6 +594,20 @@
         } else {
             alert(`The correct biome was '${currentCorrectBiome}'`);
             streak = 1;
+            lives -= 1;
+            document.getElementById('heart' + (lives + 1)).style.display = 'none'; // Hide one heart when life is lost
+
+            if (lives == 0) {
+                alert("Game Over!");
+                gameScore = 0;
+                document.getElementById('score-display').innerText = gameScore;
+                lives = 3;
+                // Reset heart display
+                for (let i = 1; i <= 3; i++) {
+                    document.getElementById('heart' + i).style.display = 'inline-block';
+                }
+            }
+
         }
         document.getElementById('game-modal').style.display = 'none'; // Hide the modal after guessing
         document.getElementById('sidebar').classList.add('active'); // Open the sidebar with the biome info when the game modal closes
