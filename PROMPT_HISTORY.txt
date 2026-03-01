@@ -27,3 +27,41 @@ Why does every country show up as ocean now?
 Okay, so it looks like we have a ton of biomes in our list, but we are not applying all of them. Without disrupting the robust biome classification system, can we apply more of the biomes we have? Dont add any new biomes to our list-- I found images already. Assume that the images are in the format of images/deeplukewarmocean.png, no spaces all lowercase title. Please replace the image with that, and apply more biomes if possible (dont add any, just classify)
 
 How come all of the ocean elevations are -24m?
+
+Can you outline the necessary steps for making my project into a geoguessr type of biome guessing game with possibly Google streetview? Is this feasible for 5-6 hours?
+
+Is it possible for it to keep searching for a streetview location if one is not found; does that take too many credits?
+
+How would I go about hiding my key if it needs to be in the URL? Also, for each code-related question, only teach me how to do it and do not provide any code
+
+How can I actually load google maps into my website?
+
+Now I need to write the logic for clicking somewhere and possibly getting a streetview. We don't need to display it right now, but I just want to write how to ask for the streetview. Again, don't provide any code, just tell me how I can start doing this
+
+I think the console is saying I'm clicking before the google maps script is done loading and it is not working
+
+It seems to work. I'm going to add HTML and CSS for the streetview container. What skeleton components should I have in my HTML?
+
+I don't think my modal is being unhidden when the streetview is found despite changing the display
+
+I don't understand why those steps are necessary, can you teach it from a beginner Javascript perspective
+
+This is what I have so far for initializing the streetview, how does it look
+
+I've added logic for drawing guessing buttons, populating an array with guesses, and creating alerts if the guess clicked was right or wrong. How does this look
+
+Can you teach me how to change the styling of the buttons so it is the same as the "biomes discovered" stat
+
+The biome in the sidebar appears before the streetview does, so it spoils the answer. Which lines are responsible for this?
+
+Next, I want to add a lives and score component where users get 3 correct tries in a round to guess before the game restarts. I've added some HTMl and javascript for this, how does it look? For the score, I'm using a mutliplier based on the streak and if the biome is new
+
+How would I approach adding a time countdown? Like if I want to give users 15 seconds to answer before it's wrong? No code yet.
+
+
+
+
+
+
+
+
