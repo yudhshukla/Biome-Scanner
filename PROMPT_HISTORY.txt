@@ -58,10 +58,13 @@ Next, I want to add a lives and score component where users get 3 correct tries 
 
 How would I approach adding a time countdown? Like if I want to give users 15 seconds to answer before it's wrong? No code yet.
 
+I don't want to use alerts for incorrect, correct, and game over. I'd like to use an actual popup instead. I've tried to implement this using the "biome discovery" popup but there's a few bugs
 
+I got rid of the continue button logic since I don't think users should have to keep on pressing that, but I don't see the popup at all now
 
+How do I update my frontend to call my database to put the user in randomly selected locations? Can I have a code skeleton?
 
+Is there a mapbox function that will bring the user to a specific location given coordinates?
 
-
-
+I want to add an exit button to get out of the "drop me" state. It seems like when I don't want to be dropped, the timer is still going. I cleared the timer, streak, and closed the display in a quitgame function- is this enough?
 
